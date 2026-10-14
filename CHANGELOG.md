@@ -1,10 +1,11 @@
 # Changelog
 
 User-facing changes in each release of SoundConnect Desktop. The release
-workflow uses the section matching a tag (`## 0.1.8` for `v0.1.8`) as the
-GitHub Release notes.
+workflow uses the section matching a tag (`## 0.1.9` for `v0.1.9`) as the
+"What's new" part of the GitHub Release notes (`tools/release-notes.ps1`)
+and as the in-app updater's release notes.
 
-## Unreleased
+## 0.1.9 - 2026-10-14
 
 - **Windows audio page redesigned**: a choice between **Stereo audio**
   (games, music and video; headphone mic off) and **Mono audio with mic**
@@ -27,11 +28,6 @@ GitHub Release notes.
   the first version that can; 0.1.8 users install 0.1.9 by hand once.
 - Release pages now start with three install steps and a fixed-name
   **SoundConnect-Desktop-Setup.exe**; the README links straight to it.
-- Public README with screenshots, install guide and credits; CONTRIBUTING
-  guide; tag-driven release workflow.
-- Settings and the remembered device are now stored in a new folder
-  (`%APPDATA%\dev.soundconnect.desktop`), so the first launch after updating
-  shows the setup wizard once.
 
 ## 0.1.8 - 2026-10-14
 
