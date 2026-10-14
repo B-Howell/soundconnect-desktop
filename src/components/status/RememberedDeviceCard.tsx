@@ -13,7 +13,7 @@ export interface RememberedDeviceCardProps {
   name: string;
   /** Model name for the product image ("" when unknown). */
   modelName: string;
-  /** The connection state (`useConnectionView`): idle, searching, connecting or error. */
+  /** The connection state (`useConnectionView`): offline, idle, searching, connecting or error. */
   view: ConnectionView;
   /** Sends `connect {address}` for the remembered headphones. */
   onConnect: () => void;
@@ -24,6 +24,7 @@ export interface RememberedDeviceCardProps {
 function primaryAction(view: ConnectionView): { label: string; enabled: boolean } {
   switch (view.kind) {
     case "idle":
+    case "offline":
       return { label: "Connect", enabled: true };
     case "searching":
       return { label: "Connect now", enabled: true };
@@ -36,8 +37,8 @@ function primaryAction(view: ConnectionView): { label: string; enabled: boolean 
 
 /**
  * The Status page while remembered headphones are not connected: their
- * picture and name, a state line ("Not connected", "Connecting…",
- * "Couldn't connect"), what to do, and Connect beside "Open Bluetooth
+ * picture and name, a state line ("Off or out of range", "Connected to
+ * Windows", "Connecting…", "Reconnecting to …", "Couldn't connect"), what to do, and Connect beside "Open Bluetooth
  * settings". Nothing connects until the user asks (unless auto-connect is
  * on). After Connect, focus moves to the name, because the pressed button
  * turns disabled while connecting.

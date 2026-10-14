@@ -106,7 +106,7 @@ describe("setup wizard", () => {
   it.each<[ConnectFailureReason, string]>([
     [
       "notConnectedToWindows",
-      "Windows is not connected to these headphones yet. Connect them in Bluetooth settings, then try again.",
+      "They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again.",
     ],
     [
       "busy",

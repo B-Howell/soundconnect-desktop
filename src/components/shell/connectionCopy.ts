@@ -4,12 +4,15 @@ import type { ConnectFailureReason } from "../../lib/engine/types";
 /**
  * What the not-connected part of the UI is showing. A UI state, not engine
  * data: `useConnectionView` maps the engine's connection status onto it.
- * `idle` is a remembered device the engine is not connecting to (auto-connect
- * off): nothing happens until the user selects Connect. `searching` names the
- * device when the engine is waiting for the remembered one.
+ * `offline` is a remembered device Windows does not list as connected (off or
+ * out of range). `idle` is one Windows lists but the engine is not connecting
+ * to (auto-connect off): nothing happens until the user selects Connect.
+ * `searching` is the engine looking with nothing remembered. `error` is only
+ * a connect attempt that failed while Windows listed the device.
  */
 export type ConnectionView =
   | { kind: "searching"; deviceName?: string }
+  | { kind: "offline"; deviceName: string }
   | { kind: "idle"; deviceName: string }
   | {
       kind: "connecting";
@@ -47,10 +50,16 @@ export function connectionCopy(view: ConnectionView): ConnectionCopy {
             title: "Looking for your headphones",
             description: "Connect them to Windows Bluetooth first.",
           };
+    case "offline":
+      return {
+        title: `${view.deviceName} is off or out of range`,
+        description:
+          "Switch them on and keep them nearby. SoundConnect notices within a few seconds once Windows connects to them.",
+      };
     case "idle":
       return {
-        title: `${view.deviceName} isn't connected`,
-        description: "Switch them on and connect them in Windows Bluetooth settings, then select Connect.",
+        title: `${view.deviceName} is connected to Windows`,
+        description: "Select Connect to control them from SoundConnect.",
       };
     case "connecting":
       return view.reconnecting
@@ -74,10 +83,13 @@ export function connectionCopy(view: ConnectionView): ConnectionCopy {
 export function connectionStateLabel(view: ConnectionView): string {
   switch (view.kind) {
     case "searching":
-    case "idle":
       return "Not connected";
+    case "offline":
+      return "Off or out of range";
+    case "idle":
+      return "Connected to Windows";
     case "connecting":
-      return "Connecting…";
+      return view.reconnecting ? `Reconnecting to ${view.deviceName}` : "Connecting…";
     case "error":
       return "Couldn't connect";
   }

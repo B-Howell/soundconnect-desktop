@@ -172,7 +172,8 @@ note and its size are in
   [ConnectionDeviceImage.tsx](<../../src/components/device-art/ConnectionDeviceImage.tsx>)
   is the 128 px photo the connection screens share.
 - Where they show: the Status device header (160 px, full photo), the rail
-  device block (72 px thumbnail, left-aligned with the name in
+  device block (72 px thumbnail, centred over the centred name and state
+  since 0.1.9 in
   [RailDevice.css](<../../src/components/frame/RailDevice.css>); 40 px centred when
   collapsed), and the searching, connecting and error screens (128 px inside
   [ActivityPulse](<../../src/components/shell/ActivityPulse.tsx>), whose `image`
@@ -612,8 +613,14 @@ display semibold) sits at the top of the content, not in the title bar.
   Status page keeps the one battery meter. Fed by
   [useRailDeviceProps](<../../src/hooks/engine/useRailDeviceProps.ts>):
   connected, the header's values and "Connected"; otherwise the status's
-  device name (else "Headphones") and "Not connected", "Connecting…" or
-  "Couldn't connect".
+  device name (else "Headphones") and `connectionStateLabel`: "Off or out of
+  range", "Connected to Windows", "Connecting…", "Reconnecting to …" or
+  "Couldn't connect". Since 0.1.9 the block is a centred column (photo,
+  name, state line, chips), expanded and collapsed, as the maintainer asked:
+  ![Rail before, dark](<screenshots/task31-rail-before.png>)
+  ![Rail after, dark](<screenshots/task31-rail-after.png>)
+  ![Collapsed rail before](<screenshots/task31-rail-collapsed-before.png>)
+  ![Collapsed rail after](<screenshots/task31-rail-collapsed-after.png>).
 - [SideNav.tsx](<../../src/components/frame/SideNav.tsx>) /
   [SideNav.css](<../../src/components/frame/SideNav.css>) and
   [NavItem.tsx](<../../src/components/frame/NavItem.tsx>) /
@@ -2754,6 +2761,44 @@ its searching, connecting and error cards take an optional `model` (else
 photo instead of the neutral WH-1000XM5;
 [useRememberedDevice](<../../src/hooks/setup/useRememberedDevice.ts>) reads
 `status.remembered`.
+
+### Real states from Windows (0.1.9)
+
+The maintainer saw "Couldn't connect" while the headphones were simply
+switched off. The engine now publishes `windowsConnected`
+([Core Services](<../core/SoundConnect Desktop - Core Services.md#contract-changes-019-windowsconnected>)),
+re-checked every 3 s while idle, and
+[useConnectionView](<../../src/hooks/engine/useConnectionView.ts>) maps
+remembered headphones onto five states, shown by the rail and the Status
+card through `connectionStateLabel` in
+[connectionCopy.ts](<../../src/components/shell/connectionCopy.ts>):
+
+| State line | When | Card advice |
+|---|---|---|
+| Off or out of range (`offline`) | `windowsConnected` false, including a `notConnectedToWindows` failure, a link lost because they switched off, and auto-connect waiting (`discovering`) | "{name} is off or out of range": switch them on, SoundConnect notices within seconds |
+| Connected to Windows (`idle`) | listed, not connected to the app (auto-connect off, or a link lost while still listed) | Connect is the call to action |
+| Connecting… / Reconnecting to {name} | `connecting`, `initialising`, `ready` before the snapshot; the second with `reconnectingAfterSettingChange` | |
+| Couldn't connect (`error`) | only `busy`, `timeout` or `refused` while listed; the reason's sentence (`failureText`) underneath, Try again | |
+| Connected | Ready with a snapshot | |
+
+A failure clears as soon as Windows' state changes, because the engine drops
+`reason` / `lastError` then. A status without `windowsConnected` (an older
+engine) is treated as listed. With nothing remembered, failures still show as
+errors (the setup wizard's own mapping). The wizard's `notConnectedToWindows`
+sentence ([connectFailureText.ts](<../../src/lib/devices/connectFailureText.ts>))
+now reads "They are off, out of range, or not connected to Windows. Switch
+them on and connect them in Bluetooth settings, then try again." The mock
+engine ([mockApi.ts](<../../src/lib/engine/mockApi.ts>)) reports
+`windowsConnected: true` except on its `notConnectedToWindows` failure.
+`RememberedDeviceCard` and `ConnectionStatus` treat `offline` like `idle`
+(Connect, plain card). The tray tooltip still says "Not connected" for both.
+
+Tests: [connectionStateLabels.test.ts](<../../tests/shell/connectionStateLabels.test.ts>)
+(the five texts and when each applies, including a timeout that turns into
+"Off or out of range" once Windows drops the device); the onboarding tests'
+expectations moved to "Connected to Windows" and the new failure sentence,
+and [deviceTitle.test.ts](<../../tests/devices/deviceTitle.test.ts>) uses a
+`busy` failure for its error case.
 
 ### Tests and verification (Task 25, 2026-10-12)
 

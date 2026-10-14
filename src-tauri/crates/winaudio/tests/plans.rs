@@ -293,5 +293,8 @@ fn fix_kinds_are_stereo_and_mono_mic_and_accept_the_old_names() {
     ] {
         assert_eq!(serde_json::from_str::<FixKind>(json).expect(json), kind);
     }
-    assert_eq!(serde_json::to_string(&FixKind::MonoMic).unwrap(), "\"monoMic\"");
+    assert_eq!(
+        serde_json::to_string(&FixKind::MonoMic).unwrap(),
+        "\"monoMic\""
+    );
 }

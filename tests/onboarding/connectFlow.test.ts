@@ -71,7 +71,7 @@ describe("remembered profile across statuses", () => {
 describe("failure texts", () => {
   it("say what to do for each engine reason", () => {
     expect(failureText("notConnectedToWindows")).toBe(
-      "Windows is not connected to these headphones yet. Connect them in Bluetooth settings, then try again.",
+      "They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again.",
     );
     expect(failureText("busy")).toBe(
       "Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again.",
@@ -167,7 +167,7 @@ describe("mock engine: setup flow", () => {
     const api = createMockEngineApi(fixture, { stepMs: 100, remembered: false });
     const states: string[] = [];
     api.onStatus((s) => states.push(s.state));
-    expect(await api.status()).toEqual({ state: "disconnected", remembered: null });
+    expect(await api.status()).toEqual({ state: "disconnected", remembered: null, windowsConnected: true });
     await vi.advanceTimersByTimeAsync(2000);
     expect(states).toEqual([]);
   });
@@ -216,7 +216,7 @@ describe("mock engine: setup flow", () => {
     await vi.advanceTimersByTimeAsync(400);
     expect(selectConnected(store.getState())).toBe(true);
     await store.getState().send({ type: "forgetDevice", address: XM4 });
-    expect(store.getState().status).toEqual({ state: "disconnected", remembered: null });
+    expect(store.getState().status).toEqual({ state: "disconnected", remembered: null, windowsConnected: true });
     stop();
   });
 });

@@ -64,7 +64,13 @@ Disconnected -> Discovering -> Connecting{address, uuid_index, deadline}
   default) the service publishes `Disconnected` plus the remembered profile and
   does nothing else until the user sends `connect`, `reconnect` or `scan`; see
   [Contract changes 2026-10-12 (round 2)](#contract-changes-2026-10-12-round-2).
-- **Discovering** (`autoConnect` on) - every `discovery_interval` (2 s) call
+- **Idle Windows check** (0.1.9) - while not connected and not discovering
+  (auto-connect off, or suspended by `disconnect`), every `discovery_interval`
+  (3 s) one `devices()` call, nothing else: no RFCOMM connect, no inquiry for
+  new devices. It sets `windowsConnected` in `engine:status` (see
+  [Contract changes 0.1.9](#contract-changes-019-windowsconnected)).
+- **Discovering** (`autoConnect` on) - every `discovery_interval` (3 s since
+  0.1.9, was 2 s) call
   `devices()` and pick the most recently seen remembered device, else the
   first whose name starts with `WH-`, `WF-` or `LinkBuds`. Upstream's backend
   lists only devices Windows has connected, so nothing is paged while the
@@ -212,7 +218,7 @@ by default when `build.rs` defines no app manifest.
 
 | Event | Payload |
 |---|---|
-| `engine:status` | `{state: "disconnected"|"discovering"|"connecting"|"initialising"|"ready", deviceName?, address?, protocol?: "V1"|"V2", lastError?, reason?, remembered}` (absent keys omitted; see [`engine:status`](#enginestatus)) |
+| `engine:status` | `{state: "disconnected"|"discovering"|"connecting"|"initialising"|"ready", deviceName?, address?, protocol?: "V1"|"V2", lastError?, reason?, remembered, windowsConnected}` (absent keys omitted; see [`engine:status`](#enginestatus)) |
 | `engine:snapshot` | `{snapshot: Snapshot, noiseView: NoiseView | null}`; `Snapshot` is the renderer contract from the bindings doc |
 | `engine:alert` | `{message, autoResponse: "negative" | null, requiresChoice: boolean}` |
 
@@ -727,6 +733,7 @@ type Status = {
   lastError?: string;
   reason?: FailureReason;     // after a failed connection attempt, or while reconnecting after a setting change
   remembered: Profile | null; // always present
+  windowsConnected: boolean;  // always present since 0.1.9
 };
 ```
 
@@ -783,6 +790,46 @@ only the launch status), `launch_without_profiles_reports_remembered_null`,
 `a_listed_device_whose_channel_will_not_open_is_busy`,
 `set_auto_connect_starts_discovery_from_idle`; plus `profiles::tests` and
 `settings::tests::input_without_auto_connect_keeps_the_stored_value`.
+
+## Contract changes 0.1.9: `windowsConnected`
+
+The maintainer saw "Couldn't connect" while the headphones were simply
+switched off: a failed attempt stayed on screen however Windows' state
+changed. Since 0.1.9 the status says what Windows sees.
+
+- `StatusView.windows_connected` (`windowsConnected`, always serialised): with
+  `disconnected` / `discovering`, whether Windows' device list (upstream's
+  `mdrConnectionGetDevicesList`, which lists only devices Windows has
+  connected) holds the watched device: the status's `address`, else the most
+  recently seen profile, else (nothing remembered) any name starting `WH-`,
+  `WF-` or `LinkBuds`. `connecting`, `initialising` and `ready` always carry
+  `true`. `set_status` fills it from the worker's `windows_listed`, so every
+  publish agrees.
+- `windows_listed` is updated by the idle check (`check_windows`, every
+  `discovery_interval` = 3 s while idle and not auto-discovering), by every
+  discovery pass (`scan`) and by `begin_connect`'s own list.
+- `note_windows`: when the listed state changes, a `disconnected` status drops
+  its `lastError` and `reason` (that failure belonged to the old Windows
+  state) and re-publishes; when the headphones appear with auto-connect on
+  and not suspended, `next_scan` is set to now, so the same check connects at
+  once instead of after `retry_backoff`.
+- The idle check is enumeration only: in the tests
+  `h.connects` stays empty while the headset is toggled.
+
+The renderer maps this onto five states (Renderer, Connection flow): "Off or
+out of range", "Connected to Windows", "Connecting…" / "Reconnecting to …",
+"Couldn't connect" (only `busy`, `timeout`, `refused` while listed) and
+"Connected".
+
+Tests ([engine_service.rs](<../../src-tauri/src/engine_service.rs>)):
+`idle_polling_publishes_windows_connected_transitions` (auto-connect off, a
+replay transport whose device list a test toggles: `windowsConnected` goes
+false, true, false with no connect; a Connect while off fails with
+`notConnectedToWindows`, and switching the headset on clears that failure)
+and `auto_connect_connects_when_windows_lists_the_headset` (Discovering with
+`windowsConnected: false` until the list holds it, then Ready). The test
+helper `states()` now folds repeated states, since a `windowsConnected`
+change re-publishes the same state.
 
 ## Coexisting with the Sony phone app
 

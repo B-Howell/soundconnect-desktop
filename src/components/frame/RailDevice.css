@@ -1,8 +1,11 @@
-/* A small card on the rail: art, then name, state and chips, left-aligned. */
+/* A small card on the rail: art, then name, state and chips, centred in a
+   column (the maintainer, 0.1.9: centre them in the card, expanded and
+   collapsed). */
 .rail-device {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: var(--space-2);
   padding: var(--space-3);
   border-radius: var(--radius-md);
@@ -17,6 +20,7 @@
 .rail-device__text {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-half);
   min-width: 0;
   max-width: 100%;
@@ -35,6 +39,7 @@
 .rail-device__state {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   font-size: var(--font-size-sm);
   line-height: var(--leading-tight);
@@ -59,10 +64,11 @@
 .rail-device__chips {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-1);
 }
 
-/* The photo's left edge lines up with the name under it (it sits centred in its square box otherwise). */
-.rail-device:not(.rail-device--collapsed) .device-image {
-  object-position: left center;
+/* The photo sits centred in its square box, over the centred name. */
+.rail-device .device-image {
+  object-position: center;
 }

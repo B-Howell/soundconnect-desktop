@@ -6,13 +6,21 @@ import type { EngineStatus, RememberedDevice } from "../../lib/engine/types";
 import { useEngine, useEngineStoreApi } from "../../state/engineContext";
 import { selectConnected } from "../../state/engineStore";
 
+/** Failures that mean the device was listed by Windows but would not talk (the only "Couldn't connect"). */
+const ATTEMPT_FAILURES = new Set(["busy", "timeout", "refused"]);
+
 /**
  * The not-connected screen for an engine status (`engine:status`):
- * - `disconnected` with a `reason` or `lastError` (a failed connect, a lost
- *   link): error, whose Try again calls `onRetry`;
- * - `disconnected` otherwise: idle when the engine remembers headphones (it
- *   waits for the user's Connect), else searching;
- * - `discovering`: searching, named after the remembered headphones if any;
+ * - `disconnected` with a `busy`, `timeout` or `refused` reason while Windows
+ *   lists the device: error ("Couldn't connect"), whose Try again calls
+ *   `onRetry`;
+ * - otherwise, with remembered headphones: offline ("Off or out of range")
+ *   when `windowsConnected` is false (including a `notConnectedToWindows`
+ *   failure and a link lost because they switched off), else idle
+ *   ("Connected to Windows": Connect is the call to action); with nothing
+ *   remembered, searching (or the error for a failed attempt);
+ * - `discovering`: offline when Windows does not list the remembered
+ *   headphones, else searching (named after them if any);
  * - `connecting`, `initialising`, and `ready` before the first snapshot:
  *   connecting to the device the engine named; `reconnecting` when the reason
  *   is `reconnectingAfterSettingChange`.
@@ -26,9 +34,11 @@ export function toConnectionView(
 ): ConnectionView {
   const title = rememberedTitle(remembered);
   const statusName = displayableName(status.deviceName);
+  const listed = status.windowsConnected !== false && status.reason !== "notConnectedToWindows";
   switch (status.state) {
-    case "disconnected":
-      if (status.reason || status.lastError) {
+    case "disconnected": {
+      const attemptFailed = status.reason !== undefined && ATTEMPT_FAILURES.has(status.reason);
+      if ((attemptFailed && listed) || (!title && (status.reason || status.lastError))) {
         return {
           kind: "error",
           deviceName: statusName ?? title,
@@ -37,8 +47,11 @@ export function toConnectionView(
           onRetry,
         };
       }
-      return title ? { kind: "idle", deviceName: title } : { kind: "searching" };
+      if (!title) return { kind: "searching" };
+      return listed ? { kind: "idle", deviceName: title } : { kind: "offline", deviceName: title };
+    }
     case "discovering":
+      if (title && !listed) return { kind: "offline", deviceName: title };
       return title ? { kind: "searching", deviceName: title } : { kind: "searching" };
     case "connecting":
     case "initialising":

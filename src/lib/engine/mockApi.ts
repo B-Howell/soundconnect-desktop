@@ -84,7 +84,7 @@ export function createMockEngineApi(
   };
   let remembered: RememberedDevice | null = startRemembered ? profile : null;
   let autoConnect = startAutoConnect;
-  let status: EngineStatus = { state: "disconnected", remembered };
+  let status: EngineStatus = { state: "disconnected", remembered, windowsConnected: true };
   let payload: SnapshotPayload | null = null;
   let started = false;
   let walk: ReturnType<typeof setTimeout> | undefined;
@@ -104,7 +104,9 @@ export function createMockEngineApi(
       ? { state, remembered: rememberedFor() }
       : { state, deviceName, address, protocol: fixture.snapshot.protocol, remembered: rememberedFor(address) };
 
+  /** The mock's headphones are listed by Windows unless a status says otherwise (as the engine reports it). */
   const publishStatus = (next: EngineStatus) => {
+    next = { ...next, windowsConnected: next.windowsConnected ?? next.reason !== "notConnectedToWindows" };
     status = next;
     statusHandlers.forEach((h) => h(next));
   };

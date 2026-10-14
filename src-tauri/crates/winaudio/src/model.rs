@@ -258,7 +258,8 @@ impl Change {
                 format!("Make {name} the {what}.")
             }
             Self::UseHandsFreeForCommunications { .. } => {
-                "Use the headphones' hands-free audio and microphone for voice chat and calls.".into()
+                "Use the headphones' hands-free audio and microphone for voice chat and calls."
+                    .into()
             }
             Self::SetEnhancements { enabled, .. } => {
                 format!("Turn audio enhancements {}.", on_off(*enabled))

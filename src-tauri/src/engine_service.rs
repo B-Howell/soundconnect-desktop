@@ -49,9 +49,9 @@ use std::time::{Duration, Instant};
 
 use crossbeam_channel::{bounded, unbounded, RecvTimeoutError, Sender};
 use mdr::{
-    AlertAction, AssignableControl, AudioPriority, ConnectStatus, ConnectionMode, Engine,
-    EqualizerPresetId, Event, PairedDeviceCommand, PlaybackAction, PollStatus, Protocol, Snapshot,
-    SpeakTimeout, SpeakToChat, SpeechSensitivity, Transport, WearingPowerMode,
+    AlertAction, AssignableControl, AudioPriority, ConnectStatus, ConnectionMode, DeviceInfo,
+    Engine, EqualizerPresetId, Event, PairedDeviceCommand, PlaybackAction, PollStatus, Protocol,
+    Snapshot, SpeakTimeout, SpeakToChat, SpeechSensitivity, Transport, WearingPowerMode,
 };
 use serde::{Deserialize, Serialize};
 
@@ -98,7 +98,10 @@ const INIT_TIMEOUT: &str = "initialisation timed out";
 /// Timing and options. [`ServiceConfig::default`] is the app's configuration.
 #[derive(Clone, Debug)]
 pub struct ServiceConfig {
-    /// Period of device enumeration while disconnected.
+    /// Period of the Windows device-list check while not connected: with
+    /// auto-connect it is the discovery pass that connects; otherwise it only
+    /// updates `windowsConnected` (enumeration only: no RFCOMM connect, no
+    /// inquiry for new devices).
     pub discovery_interval: Duration,
     /// Wait after a failed connection before trying the same device again.
     pub retry_backoff: Duration,
@@ -126,7 +129,7 @@ pub struct ServiceConfig {
 impl Default for ServiceConfig {
     fn default() -> Self {
         Self {
-            discovery_interval: Duration::from_secs(2),
+            discovery_interval: Duration::from_secs(3),
             retry_backoff: Duration::from_secs(10),
             attempt_timeout: Duration::from_millis(10_000),
             tick: Duration::from_millis(16),
@@ -188,9 +191,13 @@ pub enum ConnState {
 }
 
 /// `engine:status` payload:
-/// `{state, deviceName?, address?, protocol?, lastError?, reason?, remembered}`.
-/// `remembered` is the profile of the device in `address` when there is one,
-/// else the most recently seen profile, else `null`.
+/// `{state, deviceName?, address?, protocol?, lastError?, reason?, remembered,
+/// windowsConnected}`. `remembered` is the profile of the device in `address`
+/// when there is one, else the most recently seen profile, else `null`.
+/// `windowsConnected` says whether Windows lists that device (or, with none
+/// remembered, any Sony-looking one) as connected; it is re-checked every
+/// `discovery_interval` while not connected and is true while connecting or
+/// connected.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusView {
@@ -206,6 +213,7 @@ pub struct StatusView {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<FailureReason>,
     pub remembered: Option<DeviceProfile>,
+    pub windows_connected: bool,
 }
 
 impl StatusView {
@@ -218,6 +226,7 @@ impl StatusView {
             last_error,
             reason: None,
             remembered: None,
+            windows_connected: false,
         }
     }
 }
@@ -541,6 +550,10 @@ struct Worker {
     suspended: bool,
     profiles: Profiles,
     next_scan: Instant,
+    /// When the next Windows device-list check is due while idle.
+    next_check: Instant,
+    /// Windows lists the remembered headphones as connected (last check).
+    windows_listed: bool,
     status: StatusView,
     pending: VecDeque<EngineCommand>,
     pending_sync: bool,
@@ -584,6 +597,8 @@ impl Worker {
             suspended: false,
             profiles,
             next_scan: Instant::now(),
+            next_check: Instant::now(),
+            windows_listed: false,
             status,
             pending: VecDeque::new(),
             pending_sync: false,
@@ -604,6 +619,7 @@ impl Worker {
         match self.phase {
             Phase::Idle => self
                 .next_scan
+                .min(self.next_check)
                 .saturating_duration_since(Instant::now())
                 .clamp(
                     self.cfg.tick,
@@ -644,11 +660,15 @@ impl Worker {
 
     fn set_status(&mut self, mut status: StatusView) {
         status.remembered = self.remembered_for(status.address.as_deref());
+        status.windows_connected = match status.state {
+            ConnState::Connecting | ConnState::Initialising | ConnState::Ready => true,
+            ConnState::Disconnected | ConnState::Discovering => self.windows_listed,
+        };
         if status == self.status {
             return;
         }
         eprintln!(
-            "engine: status {:?} device={} address={} protocol={} lastError={} reason={:?}",
+            "engine: status {:?} device={} address={} protocol={} lastError={} reason={:?} windowsConnected={}",
             status.state,
             status.device_name.as_deref().unwrap_or("-"),
             status.address.as_deref().unwrap_or("-"),
@@ -658,6 +678,7 @@ impl Worker {
                 .unwrap_or_else(|| "-".into()),
             status.last_error.as_deref().unwrap_or("-"),
             status.reason,
+            status.windows_connected,
         );
         self.status = status.clone();
         *self.shared.status.lock().expect("status lock") = status.clone();
@@ -681,6 +702,7 @@ impl Worker {
                 .as_ref()
                 .map(|_| FailureReason::ReconnectingAfterSettingChange),
             remembered: None,
+            windows_connected: true,
         }
     }
 
@@ -928,7 +950,11 @@ impl Worker {
             Phase::Idle => {
                 if self.auto_connect && !self.suspended && now >= self.next_scan {
                     self.next_scan = now + self.cfg.discovery_interval;
+                    self.next_check = self.next_scan;
                     self.scan(now);
+                } else if now >= self.next_check {
+                    self.next_check = now + self.cfg.discovery_interval;
+                    self.check_windows(now);
                 }
             }
             Phase::Connecting {
@@ -971,6 +997,62 @@ impl Worker {
         }
     }
 
+    /// The address whose Windows connection `windowsConnected` reports: the
+    /// status's device, else the most recently seen profile.
+    fn watched_address(&self) -> Option<String> {
+        self.status
+            .address
+            .clone()
+            .or_else(|| self.profiles.latest().map(|p| p.address.clone()))
+    }
+
+    /// Whether `list` holds the watched device (with none remembered, any
+    /// Sony-looking name).
+    fn lists_watched(&self, list: &[DeviceInfo]) -> bool {
+        match self.watched_address() {
+            Some(address) => list.iter().any(|d| d.mac.eq_ignore_ascii_case(&address)),
+            None => list
+                .iter()
+                .any(|d| NAME_PREFIXES.iter().any(|p| d.name.starts_with(p))),
+        }
+    }
+
+    /// Records what Windows lists. When that changes, a failure shown for the
+    /// old Windows state is stale, so a Disconnected status drops its error
+    /// and reason and the renderer shows the real state; when the headphones
+    /// appear and auto-connect is on, the next step connects at once (no
+    /// backoff).
+    fn note_windows(&mut self, listed: bool, now: Instant) {
+        if listed == self.windows_listed {
+            return;
+        }
+        eprintln!("engine: Windows lists the headphones as connected: {listed}");
+        self.windows_listed = listed;
+        let mut status = self.status.clone();
+        if status.state == ConnState::Disconnected {
+            status.last_error = None;
+            status.reason = None;
+        }
+        self.set_status(status);
+        if listed && self.auto_connect && !self.suspended {
+            self.next_scan = now;
+        }
+    }
+
+    /// The idle check: one device list, no connect and no inquiry.
+    fn check_windows(&mut self, now: Instant) {
+        match self
+            .transport()
+            .and_then(|t| t.devices().map_err(|e| e.to_string()))
+        {
+            Ok(list) => {
+                let listed = self.lists_watched(&list);
+                self.note_windows(listed, now);
+            }
+            Err(e) => eprintln!("engine: Windows device check failed: {e}"),
+        }
+    }
+
     /// One discovery pass: pick the most recently remembered device Windows
     /// lists as connected, else the first Sony-looking name, and connect.
     /// With auto-connect off (a `reconnect` without a profile), finding
@@ -993,6 +1075,8 @@ impl Worker {
                 Vec::new()
             }
         };
+        let listed = self.lists_watched(&devices);
+        self.note_windows(listed, now);
         let pick = devices
             .iter()
             .filter(|d| self.profiles.contains(&d.mac))
@@ -1045,6 +1129,7 @@ impl Worker {
                 true
             }
         };
+        self.windows_listed = listed;
         if !listed {
             let error = format!("{} is not connected to Windows", target.name);
             return self.lost(error, Some(FailureReason::NotConnectedToWindows), now);
@@ -1694,8 +1779,8 @@ mod tests {
         queued: Arc<Mutex<VecDeque<u8>>>,
         /// Fails every connect like a channel another controller holds.
         busy: bool,
-        /// Windows lists the headset as connected.
-        listed: bool,
+        /// Windows lists the headset as connected (a test may toggle it).
+        listed: Arc<std::sync::atomic::AtomicBool>,
         /// Every address `connect` was called with.
         connects: Arc<Mutex<Vec<String>>>,
         /// After replying to this payload the device closes the link, like the
@@ -1779,7 +1864,7 @@ mod tests {
                 name: "Some Keyboard".into(),
                 mac: "00:00:00:00:00:01".into(),
             }];
-            if self.listed {
+            if self.listed.load(std::sync::atomic::Ordering::SeqCst) {
                 list.push(DeviceInfo {
                     name: self.name.clone(),
                     mac: XM3_ADDRESS.into(),
@@ -1824,6 +1909,8 @@ mod tests {
         queued: Arc<Mutex<VecDeque<u8>>>,
         connects: Arc<Mutex<Vec<String>>>,
         refuse: Arc<std::sync::atomic::AtomicBool>,
+        /// Windows lists the headset as connected; flip it to power the headset on or off.
+        listed: Arc<std::sync::atomic::AtomicBool>,
     }
 
     impl Harness {
@@ -1922,6 +2009,8 @@ mod tests {
         let queued = Arc::new(Mutex::new(VecDeque::new()));
         let connects = Arc::new(Mutex::new(Vec::new()));
         let refuse = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let listed_flag = Arc::new(std::sync::atomic::AtomicBool::new(s.listed));
+        let f_listed = listed_flag.clone();
         let (f_tx, f_armed, f_drained, f_queued, f_connects, f_refuse) = (
             tx.clone(),
             armed.clone(),
@@ -1936,7 +2025,7 @@ mod tests {
             protocol,
             replies,
             auto_connect,
-            listed,
+            listed: _,
             busy,
             profiles_path,
             close_after,
@@ -1953,7 +2042,7 @@ mod tests {
                 replies: replies.clone(),
                 queued: f_queued.clone(),
                 busy,
-                listed,
+                listed: f_listed.clone(),
                 connects: f_connects.clone(),
                 close_after: close_after.clone(),
                 closed: false,
@@ -1981,6 +2070,7 @@ mod tests {
             queued,
             connects,
             refuse,
+            listed: listed_flag,
         }
     }
 
@@ -1995,13 +2085,16 @@ mod tests {
         panic!("timed out waiting for {what}");
     }
 
+    /// The published states in order, repeats folded (a `windowsConnected`
+    /// change re-publishes the same state).
     fn states(sink: &VecSink) -> Vec<ConnState> {
-        sink.statuses
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|s| s.state)
-            .collect()
+        let mut out: Vec<ConnState> = Vec::new();
+        for s in sink.statuses.lock().unwrap().iter() {
+            if out.last() != Some(&s.state) {
+                out.push(s.state);
+            }
+        }
+        out
     }
 
     #[test]
@@ -2683,6 +2776,85 @@ mod tests {
             serde_json::to_value(&s).unwrap()["reason"],
             "notConnectedToWindows"
         );
+    }
+
+    /// Idle with auto-connect off: the service re-checks Windows' device list
+    /// every `discovery_interval` (no connect) and publishes `windowsConnected`
+    /// as the headset is switched on and off; a failure shown for the old
+    /// Windows state is cleared when it changes.
+    #[test]
+    fn idle_polling_publishes_windows_connected_transitions() {
+        let path = temp_profiles("windows-check");
+        write_profiles(&path, &[xm4_profile()]);
+        let h = start_setup(Setup {
+            auto_connect: false,
+            listed: false,
+            profiles_path: Some(path),
+            ..Setup::xm4()
+        });
+        let windows = |h: &Harness| -> Vec<bool> {
+            let mut seen: Vec<bool> = Vec::new();
+            for s in h.sink.statuses.lock().unwrap().iter() {
+                if seen.last() != Some(&s.windows_connected) {
+                    seen.push(s.windows_connected);
+                }
+            }
+            seen
+        };
+        wait_for("the launch status", || {
+            !h.sink.statuses.lock().unwrap().is_empty()
+        });
+        assert!(!h.service.status().windows_connected);
+
+        h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("windowsConnected true", || {
+            h.service.status().windows_connected
+        });
+        assert_eq!(h.service.status().state, ConnState::Disconnected);
+
+        h.listed.store(false, std::sync::atomic::Ordering::SeqCst);
+        wait_for("windowsConnected false", || {
+            !h.service.status().windows_connected
+        });
+        assert_eq!(windows(&h), vec![false, true, false]);
+        // Enumeration only: nothing tried to open a channel.
+        assert!(h.connects.lock().unwrap().is_empty());
+
+        // A Connect while the headset is off fails with notConnectedToWindows...
+        h.service
+            .send(EngineCommand::Connect {
+                address: XM3_ADDRESS.into(),
+            })
+            .unwrap();
+        wait_for("the failed connect", || {
+            h.service.status().reason == Some(FailureReason::NotConnectedToWindows)
+        });
+        // ...and switching it on clears that failure: the real state shows.
+        h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("the cleared failure", || {
+            let s = h.service.status();
+            s.windows_connected && s.reason.is_none() && s.last_error.is_none()
+        });
+        assert_eq!(h.service.status().state, ConnState::Disconnected);
+        h.service.shutdown();
+    }
+
+    /// With auto-connect on, the same check connects as soon as Windows lists
+    /// the headset, and Ready reports `windowsConnected`.
+    #[test]
+    fn auto_connect_connects_when_windows_lists_the_headset() {
+        let h = start_setup(Setup {
+            listed: false,
+            ..Setup::xm4()
+        });
+        wait_for("discovering", || {
+            h.service.status().state == ConnState::Discovering
+        });
+        assert!(!h.service.status().windows_connected);
+        h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("Ready", || h.service.status().state == ConnState::Ready);
+        assert!(h.service.status().windows_connected);
+        h.service.shutdown();
     }
 
     #[test]

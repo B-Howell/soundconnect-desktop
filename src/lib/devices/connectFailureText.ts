@@ -7,7 +7,7 @@ import type { ConnectFailureReason, StatusReason } from "../engine/types";
  */
 export const connectFailureText: Readonly<Record<ConnectFailureReason, string>> = {
   notConnectedToWindows:
-    "Windows is not connected to these headphones yet. Connect them in Bluetooth settings, then try again.",
+    "They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again.",
   busy: "Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again.",
   timeout: "The headphones did not answer in time. Make sure they are switched on and nearby, then try again.",
   refused: "The headphones refused the connection. Switch them off and on again, then try again.",

@@ -56,14 +56,14 @@ describe("remembered headphones at launch", () => {
 
     const page = screen.getByRole("region", { name: "Status" });
     expect(within(page).getByRole("heading", { name: "WH-1000XM4" })).toBeInTheDocument();
-    expect(page).toHaveTextContent("Not connected");
-    expect(page).toHaveTextContent("connect them in Windows Bluetooth settings, then select Connect");
+    expect(page).toHaveTextContent("Connected to Windows");
+    expect(page).toHaveTextContent("Select Connect to control them from SoundConnect.");
     expect(page).not.toHaveTextContent("Looking for");
     expect(page.querySelector("img.device-image[data-model=\"WH-1000XM4\"]")).not.toBeNull();
     // The rail names the remembered headphones too.
     const rail = screen.getByRole("complementary");
     expect(rail).toHaveTextContent("WH-1000XM4");
-    expect(rail).toHaveTextContent("Not connected");
+    expect(rail).toHaveTextContent("Connected to Windows");
     // Nothing was asked of the engine but the stored auto-connect choice (off).
     await expect.poll(() => commands(api)).toEqual([{ type: "setAutoConnect", enabled: false }]);
 
@@ -113,7 +113,7 @@ describe("setup while headphones are remembered", () => {
     act(() =>
       store.getState().receiveStatus({ state: "disconnected", address: "F8:4E:17:00:00:01", reason: "notConnectedToWindows", remembered: null }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Windows is not connected to these headphones yet.");
+    expect(screen.getByRole("alert")).toHaveTextContent("They are off, out of range, or not connected to Windows.");
     await user.click(screen.getByRole("button", { name: "Cancel setup" }));
     expect(within(screen.getByRole("region", { name: "Status" })).getByRole("heading", { name: "WH-1000XM4" })).toBeInTheDocument();
   });

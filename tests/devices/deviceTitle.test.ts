@@ -50,7 +50,7 @@ describe("remembered device titles on the connection screens and rail", () => {
     expect(toConnectionView({ state: "disconnected" }, retry, stored013)).toEqual({ kind: "idle", deviceName: "WH-1000XM4" });
     expect(toConnectionView({ state: "discovering" }, retry, stored013)).toEqual({ kind: "searching", deviceName: "WH-1000XM4" });
     const failed = toConnectionView(
-      { state: "disconnected", deviceName: ADDRESS, address: ADDRESS, lastError: "x" },
+      { state: "disconnected", deviceName: ADDRESS, address: ADDRESS, lastError: "x", reason: "busy" },
       retry,
       stored013,
     );

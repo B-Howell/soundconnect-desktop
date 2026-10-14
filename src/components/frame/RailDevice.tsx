@@ -16,9 +16,9 @@ export interface RailDeviceProps {
 }
 
 /**
- * The compact device block at the top of the rail: the model's product photo
- * (thumbnail), the name,
- * the connection state and, while connected, battery and codec chips. An
+ * The compact device block at the top of the rail, centred in a column: the
+ * model's product photo (thumbnail), the name, the connection state and,
+ * while connected, battery and codec chips. An
  * icon-only rail shows the photo alone, with name and state as its tooltip and
  * as hidden text.
  */

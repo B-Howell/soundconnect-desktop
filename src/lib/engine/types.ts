@@ -368,6 +368,13 @@ export interface EngineStatus {
   remembered?: RememberedDevice | null;
   /** Set on `disconnected` after a failed connect, and on `connecting` while reconnecting after a setting change. */
   reason?: StatusReason;
+  /**
+   * Windows lists the remembered headphones as connected (the engine
+   * re-checks every 3 s while not connected; true while connecting or
+   * connected). Absent from older engines and some mock statuses: treated as
+   * listed.
+   */
+  windowsConnected?: boolean;
 }
 
 /** One device in an `engine:devices` event (the answer to `scan`). */

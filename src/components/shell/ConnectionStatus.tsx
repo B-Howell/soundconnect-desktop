@@ -29,6 +29,7 @@ export function ConnectionStatus({ view, model }: ConnectionStatusProps) {
       break;
     // The Status page shows a remembered device's own card (`RememberedDeviceCard`);
     // this plain card covers any other place that shows the idle state.
+    case "offline":
     case "idle": {
       const { title, description } = connectionCopy(view);
       card = (

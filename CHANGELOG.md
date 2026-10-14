@@ -14,6 +14,13 @@ GitHub Release notes.
   Connection) that show a recommendation only when something differs, and
   Restore moved under "Advanced". "Mono audio" is now "Mono mix
   (accessibility)" so it is not confused with the mode.
+- **Honest connection status**: the rail and Status card now say "Off or
+  out of range" when Windows does not see the headphones, "Connected to
+  Windows" when they are ready for Connect, and "Couldn't connect" only
+  after a real failed attempt; SoundConnect re-checks Windows every 3
+  seconds and, with automatic connection on, connects as soon as they
+  appear.
+- The headphones' picture, name and status are centred in the left rail.
 - Public README with screenshots, install guide and credits; CONTRIBUTING
   guide; tag-driven release workflow.
 - Settings and the remembered device are now stored in a new folder
