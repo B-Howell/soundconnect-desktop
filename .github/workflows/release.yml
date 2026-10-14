@@ -143,9 +143,10 @@ jobs:
           Copy-Item upstream/SonyHeadphonesClient/LICENSE "$zipDir/LICENSE-SonyHeadphonesClient.txt"
           Compress-Archive -Path "$zipDir/*" -DestinationPath "release/engine-dlls-$short.zip"
 
-          Get-ChildItem release -File | Sort-Object Name | ForEach-Object {
+          $sums = Get-ChildItem release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
             "{0}  {1}" -f (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(), $_.Name
-          } | Out-File -Encoding utf8 release/SHA256SUMS.txt
+          }
+          Set-Content -Path release/SHA256SUMS.txt -Value $sums -Encoding utf8
           Get-Content release/SHA256SUMS.txt
 
       - name: Create GitHub Release
