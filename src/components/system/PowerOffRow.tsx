@@ -32,7 +32,6 @@ export function PowerOffRow({ deviceName, onConfirm, disabled }: PowerOffRowProp
         open={sheet.open}
         onClose={sheet.hide}
         title={`Power off ${deviceName}?`}
-        message="Turn them on again with their power button."
         initialFocus={cancel}
       >
         <SheetActions>

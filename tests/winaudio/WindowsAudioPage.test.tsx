@@ -70,13 +70,13 @@ describe("WindowsAudioPage on the recording", () => {
     for (const gone of ["Hands-Free (mono call audio)", "Microphone for calls", "Mono audio", "Codec"]) {
       expect(screen.queryByText(gone)).toBeNull();
     }
-    expect(screen.getByText(/not connected to Windows now/)).toBeInTheDocument();
+    expect(screen.getByText("Headphones off or disconnected. Showing last known settings.")).toBeInTheDocument();
   });
 
   it("marks admin rows with the shield, and only them", async () => {
     render(<WindowsAudioPage />);
     await ready();
-    const shield = /needs a Windows permission prompt/;
+    const shield = /needs administrator permission/;
     expect(rowOf("Absolute volume")).toHaveTextContent(shield);
     expect(rowOf("Adapter power saving")).toHaveTextContent(shield);
     expect(rowOf("Audio enhancements")).not.toHaveTextContent(shield);
@@ -114,11 +114,11 @@ describe("WindowsAudioPage on the recording", () => {
     const sheet = await screen.findByRole("dialog", { name: "Switch to Mono audio with mic" });
     const items = within(within(sheet).getByRole("list", { name: "Changes" })).getAllByRole("listitem");
     expect(items.map((i) => i.textContent)).toEqual([
-      "Turn the hands-free profile (headphone mic, mono sound) on.(needs a Windows permission prompt)",
-      "Use the headphones' hands-free audio and microphone for voice chat and calls.",
+      "Turn the hands-free profile on.(needs administrator permission)",
+      "Use the headphone mic for voice chat and calls.",
     ]);
     expect(sheet).toHaveTextContent(ADMIN_PROMPT_NOTE);
-    expect(sheet).toHaveTextContent("All sound will be mono");
+    expect(sheet).toHaveTextContent("Sound is mono while an app uses the mic.");
     expect(mock.batches).toHaveLength(0);
 
     await user.click(within(sheet).getByRole("button", { name: "Apply" }));
@@ -158,7 +158,7 @@ describe("WindowsAudioPage on the recording", () => {
     expect(screen.queryByRole("button", { name: /Restore previous settings/ })).toBeNull();
     await user.click(toggle);
     expect(screen.queryByRole("button", { name: /Restore previous settings/ })).toBeNull();
-    expect(screen.getByText(/Nothing to restore yet/)).toBeInTheDocument();
+    expect(screen.getByText("No restore point yet.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Open Windows Sound settings/ })).toBeEnabled();
 
     await user.click(within(rowOf("Mono mix (accessibility)")).getByRole("switch"));
@@ -174,7 +174,7 @@ describe("PlanPreviewSheet", () => {
     render(<PlanPreviewSheet kind="stereo" plan={stereoPlan as Plan} onConfirm={vi.fn()} onClose={vi.fn()} />);
     const sheet = screen.getByRole("dialog", { name: "Switch to Stereo audio" });
     expect(sheet).toHaveTextContent("Nothing to change.");
-    expect(sheet).toHaveTextContent("not connected to Windows");
+    expect(sheet).toHaveTextContent("Headphones off or disconnected.");
     expect(within(sheet).queryByRole("button", { name: "Apply" })).toBeNull();
     expect(within(sheet).getByRole("button", { name: "Close" })).toBeInTheDocument();
   });

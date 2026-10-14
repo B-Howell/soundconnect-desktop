@@ -128,7 +128,7 @@ describe("useRailDeviceProps", () => {
     });
     const store = createEngineStore(spyApi());
     const { result } = renderHookWithStore(useRailDeviceProps, store);
-    expect(result.current).toEqual({ name: "Headphones", state: "Not connected", connected: false });
+    expect(result.current).toEqual({ name: "Headphones", state: "No headphones set up", connected: false });
     act(() => store.getState().receiveStatus({ state: "connecting", deviceName: "WH-1000XM4" }));
     expect(result.current).toEqual({ name: "WH-1000XM4", state: "Connecting…", connected: false });
   });

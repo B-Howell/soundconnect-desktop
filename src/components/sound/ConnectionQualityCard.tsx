@@ -29,8 +29,7 @@ export function ConnectionQualityCard({ value, onChange }: ConnectionQualityCard
       />
       <SectionFooter>
         <p>
-          Sound quality uses the highest bit rate the codec allows; a stable connection drops less often in busy
-          places. The headphones may reconnect briefly after a change.
+          The headphones reconnect briefly after a change.
         </p>
       </SectionFooter>
     </>

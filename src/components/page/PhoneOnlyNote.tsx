@@ -17,7 +17,7 @@ export function PhoneOnlyNote({ features }: PhoneOnlyNoteProps) {
     <LabelledSection title="Only in the phone app">
       <div className="phone-only-note">
         <InfoNote icon="phone">
-          Only Sony&apos;s Sound Connect app on a phone can do this: {features.join(", ")}.
+          {features.join(", ")}.
         </InfoNote>
       </div>
     </LabelledSection>

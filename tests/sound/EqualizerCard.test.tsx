@@ -148,7 +148,7 @@ describe("EqualizerCard", () => {
 
   it("disables everything and says why when the equalizer is unavailable", () => {
     render(<EqualizerCard {...cardProps({ available: false })} />);
-    expect(screen.getByText(/Unavailable while a listening mode/)).toBeInTheDocument();
+    expect(screen.getByText("Unavailable in this listening mode.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Preset/ })).toBeDisabled();
     for (const slider of screen.getAllByRole("slider")) expect(slider).toBeDisabled();
   });

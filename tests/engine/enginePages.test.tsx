@@ -19,7 +19,7 @@ const sent = (api: SpyApi) => api.send.mock.calls.map((call) => call[0]);
 describe("StatusPage", () => {
   it("shows searching from a Disconnected status, with no device data", () => {
     renderWithStore(<StatusPage />, createEngineStore(spyApi()));
-    expect(screen.getByRole("heading", { name: "Looking for your headphones" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "No headphones set up" })).toBeInTheDocument();
     expect(screen.queryByRole("meter")).toBeNull();
   });
 
@@ -69,7 +69,7 @@ describe("NoiseControlPage", () => {
 
   it("asks to connect while disconnected", () => {
     renderWithStore(<NoiseControlPage />, createEngineStore(spyApi()));
-    expect(screen.getByText("Connect your headphones to change these settings.")).toBeInTheDocument();
+    expect(screen.getByText("Connect headphones to change these settings.")).toBeInTheDocument();
   });
 
   it("shows the recorded cancelling state on the slider's first stop and the button function", () => {
@@ -115,7 +115,7 @@ describe("NoiseControlPage", () => {
 describe("SoundPage", () => {
   it("asks to connect while disconnected", () => {
     renderWithStore(<SoundPage />, createEngineStore(spyApi()));
-    expect(screen.getByText("Connect your headphones to change these settings.")).toBeInTheDocument();
+    expect(screen.getByText("Connect headphones to change these settings.")).toBeInTheDocument();
   });
 
   it("shows the equalizer only as an entry card (the controls are on its sub-page)", () => {
@@ -132,7 +132,7 @@ describe("SoundPage", () => {
 describe("EqualizerPage", () => {
   it("asks to connect while disconnected", () => {
     renderWithStore(<EqualizerPage />, createEngineStore(spyApi()));
-    expect(screen.getByText("Connect your headphones to change these settings.")).toBeInTheDocument();
+    expect(screen.getByText("Connect headphones to change these settings.")).toBeInTheDocument();
   });
 
   it("shows the recorded curve, presets with sparklines from the XM4 fixture, sliders and DSEE", () => {
@@ -178,7 +178,7 @@ describe("EqualizerPage", () => {
 describe("SystemPage", () => {
   it("asks to connect while disconnected", () => {
     renderWithStore(<SystemPage />, createEngineStore(spyApi()));
-    expect(screen.getByText("Connect your headphones to change these settings.")).toBeInTheDocument();
+    expect(screen.getByText("Connect headphones to change these settings.")).toBeInTheDocument();
   });
 
   it("sends powerOff only after the confirmation", async () => {
@@ -249,7 +249,7 @@ describe("DevicesPage", () => {
 
   it("asks to connect while disconnected", () => {
     renderWithStore(<DevicesPage />, createEngineStore(spyApi()));
-    expect(screen.getByText("Connect your headphones to change these settings.")).toBeInTheDocument();
+    expect(screen.getByText("Connect headphones to change these settings.")).toBeInTheDocument();
   });
 
   /** The recording as a protocol V2 device would report it: the engine sends setPairedDevice only on V2. */
@@ -269,7 +269,7 @@ describe("DevicesPage", () => {
     ]);
     // libmdr rejects setPairedDevice on V1 (Core Services): no actions are offered.
     expect(within(list).queryAllByRole("button")).toEqual([]);
-    expect(screen.getByText(/do not let a computer connect, switch or forget/)).toBeInTheDocument();
+    expect(screen.getByText("These headphones can't manage paired devices from a PC.")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Connect to 2 devices simultaneously" })).toHaveAttribute(
       "aria-checked",
       "true",

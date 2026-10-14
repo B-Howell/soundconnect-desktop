@@ -34,8 +34,8 @@ export interface AmbientSoundControlCardProps {
 /** Why the slider starts below level 1, in the Sony app's terms. */
 function lowestStopsNote(canWind: boolean): string {
   return canWind
-    ? "The two lowest positions are Noise cancelling and Wind noise reduction, which also cuts the sound of wind. From 1 to 20 more ambient sound comes through."
-    : "The lowest position is Noise cancelling. From 1 to 20 more ambient sound comes through.";
+    ? "Lowest positions: Noise cancelling, Wind noise reduction."
+    : "Lowest position: Noise cancelling.";
 }
 
 /**

@@ -10,7 +10,7 @@ import { useSetupStore } from "../../state/setupStore";
  * a status from the engine (not a failed read), so the app never flashes the
  * wizard before it knows. A first run starts at the welcome; once setup has
  * been finished before, it starts at "Pair with Windows". A settled connect
- * attempt is cleared first, so an old "connected" cannot skip to "All set".
+ * attempt is cleared first, so an old "connected" cannot skip to "Setup complete".
  * Called once, in `AppRoot`.
  */
 export function useSetupGate(): void {

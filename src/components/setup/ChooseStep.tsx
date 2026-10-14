@@ -20,20 +20,20 @@ export interface ChooseStepProps {
   onCancel?: () => void;
 }
 
-/** The scan's progress in one sentence, read politely; null once devices are listed. */
+/**
+ * The scan's result in a few words, read politely: null before the first
+ * scan, while scanning (the button says "Scanning…") and once devices are
+ * listed.
+ */
 function scanMessage(scan: ScanState): string | null {
-  const empty = scan.phase === "idle" || scan.devices.length === 0;
   switch (scan.phase) {
     case "idle":
-      return "Select Scan to list the Bluetooth devices Windows is connected to.";
     case "scanning":
-      return empty ? "Looking for Bluetooth devices…" : null;
+      return null;
     case "done":
-      return empty
-        ? "Windows isn't connected to any Bluetooth devices. Connect your headphones in Bluetooth settings, then scan again."
-        : null;
+      return scan.devices.length === 0 ? "No Bluetooth devices found." : null;
     case "failed":
-      return `The scan didn't finish (${scan.message}). Try scanning again.`;
+      return "Scan failed.";
   }
 }
 
@@ -64,8 +64,7 @@ export function ChooseStep({
     <SetupCard
       index={index}
       count={count}
-      title="Choose your headphones"
-      lead="Switch your headphones on, then scan and select them."
+      title="Choose headphones"
       primary={
         // Not disabled while scanning: that would drop focus to the page; `startScan` ignores a second press.
         <SheetButton onPress={onScan}>
@@ -75,17 +74,17 @@ export function ChooseStep({
       secondary={<StepNavigation onBack={onBack} onCancel={onCancel} />}
     >
       <p className={message ? "choose-step__message" : "sr-only"} role="status">
-        {message ?? `${devices.length} ${devices.length === 1 ? "device" : "devices"} found.`}
+        {message ?? (scan.phase === "idle" ? "" : `${devices.length} ${devices.length === 1 ? "device" : "devices"} found.`)}
       </p>
       {devices.length > 0 ? (
         <DeviceChoiceList devices={devices} connectingAddress={connecting} onSelect={onSelect} />
       ) : null}
       {failure ? (
-        <ConnectFailureNote text={failureText(failure.reason)} onRetry={() => onSelect(failure.address)} />
+        <ConnectFailureNote text={failureText(failure.reason) || "Connection failed."} onRetry={() => onSelect(failure.address)} />
       ) : null}
       {nothingFound || failure?.reason === "notConnectedToWindows" ? (
         <SheetButton variant="secondary" onPress={onOpenBluetoothSettings}>
-          Open Windows Bluetooth settings
+          Bluetooth settings
         </SheetButton>
       ) : null}
     </SetupCard>

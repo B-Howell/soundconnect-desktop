@@ -11,8 +11,7 @@ export function AutoConnectRow() {
   const setAutoConnect = useSettingsStore((state) => state.setAutoConnect);
   return (
     <ToggleRow
-      title="Connect automatically when the headphones appear"
-      subtitle="When off, SoundConnect waits for you to select Connect."
+      title="Connect automatically"
       checked={autoConnect}
       onChange={setAutoConnect}
     />

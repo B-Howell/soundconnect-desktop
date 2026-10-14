@@ -69,13 +69,12 @@ describe("remembered profile across statuses", () => {
 });
 
 describe("failure texts", () => {
-  it("say what to do for each engine reason", () => {
-    expect(failureText("notConnectedToWindows")).toBe(
-      "They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again.",
-    );
-    expect(failureText("busy")).toBe(
-      "Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again.",
-    );
+  it("name the reason in one short line, with no advice", () => {
+    expect(failureText("notConnectedToWindows")).toBe("Headphones off or disconnected.");
+    expect(failureText("busy")).toBe("Another app is using the headphones.");
+    expect(failureText("timeout")).toBe("Connection timed out.");
+    expect(failureText("refused")).toBe("Connection refused.");
+    expect(failureText(undefined)).toBe("");
     expect(Object.keys(connectFailureText).sort()).toEqual(["busy", "notConnectedToWindows", "refused", "timeout"]);
   });
 });
@@ -131,7 +130,7 @@ describe("engine store: scan and connect", () => {
     const store = createEngineStore(api, { scanTimeoutMs: 1000 });
     await store.getState().startScan();
     await vi.advanceTimersByTimeAsync(1000);
-    expect(store.getState().scan).toMatchObject({ phase: "failed", message: "The scan got no answer." });
+    expect(store.getState().scan).toMatchObject({ phase: "failed", message: "No response." });
   });
 
   it("follows connectTo through to connected, or to the engine's failure reason", async () => {

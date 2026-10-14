@@ -20,7 +20,7 @@ export function UpdateNotesSheet({ open, version, notes, onClose }: UpdateNotesS
     <Sheet open={open} onClose={onClose} title={`What's new in ${version}`} initialFocus={close}>
       <div className="update-notes">
         {notes?.trim() ? <p className="update-notes__text">{notes.trim()}</p> : null}
-        <p className="update-notes__link">Full release page: {releasePageUrl(version)}</p>
+        <p className="update-notes__link">Release page: {releasePageUrl(version)}</p>
       </div>
       <SheetActions>
         <SheetButton variant="secondary" onPress={onClose} ref={close}>

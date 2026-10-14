@@ -6,7 +6,7 @@ import "./RailDevice.css";
 export interface RailDeviceProps {
   /** The device's name, or a generic one while nothing is connected. */
   name: string;
-  /** One short line: "Connected", "Connecting", "Not connected". */
+  /** One short line ("Connected", "Connecting…", "Ready to connect"); hidden while connected with a battery reading. */
   state: string;
   connected: boolean;
   percent?: number;
@@ -32,14 +32,18 @@ export function RailDevice({ name, state, connected, percent, charging = false, 
     );
   }
   const chips = connected && (percent !== undefined || codec);
+  // Connected with a battery reading: the battery chip says it; no "Connected" line.
+  const showState = !(connected && percent !== undefined);
   return (
     <div className="rail-device">
       <DeviceImage model={name} size={72} variant="thumb" />
       <div className="rail-device__text">
         <p className="rail-device__name">{name}</p>
-        <p className="rail-device__state" data-connected={connected}>
-          {state}
-        </p>
+        {showState ? (
+          <p className="rail-device__state" data-connected={connected}>
+            {state}
+          </p>
+        ) : null}
       </div>
       {chips ? (
         <div className="rail-device__chips">

@@ -9,6 +9,7 @@ import { useConnectAttempt } from "../hooks/setup/useConnectAttempt";
 import { useOpenBluetoothSettings } from "../hooks/setup/useOpenBluetoothSettings";
 import { useRememberedDevice } from "../hooks/setup/useRememberedDevice";
 import { rememberedTitle, UNNAMED_HEADPHONES } from "../lib/devices/deviceTitle";
+import { useSetupStore } from "../state/setupStore";
 
 /**
  * Status: the connected device (device card, quick noise switch, now
@@ -25,6 +26,7 @@ export function StatusPage() {
   const remembered = useRememberedDevice();
   const { connect } = useConnectAttempt();
   const openBluetoothSettings = useOpenBluetoothSettings();
+  const openSetup = useSetupStore((state) => state.openSetup);
 
   if (connected && device) {
     return (
@@ -42,5 +44,5 @@ export function StatusPage() {
       />
     );
   }
-  return <ConnectionStatus view={view} />;
+  return <ConnectionStatus view={view} onSetUp={() => openSetup()} onOpenBluetoothSettings={openBluetoothSettings} />;
 }

@@ -77,6 +77,6 @@ describe("EqualizerSections", () => {
       "Equalizer curve: Clear Bass −1, 400 Hz 0, 1 kHz +5, 2.5 kHz +7, 6.3 kHz +7, 16 kHz +9",
     );
     expect(screen.getByRole("button", { name: "Bright" })).toBeDisabled();
-    expect(screen.getByText("Unavailable while a listening mode other than Standard is active.")).toBeInTheDocument();
+    expect(screen.getByText("Unavailable in this listening mode.")).toBeInTheDocument();
   });
 });

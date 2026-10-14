@@ -6,21 +6,23 @@ import type { EngineStatus, RememberedDevice } from "../../lib/engine/types";
 import { useEngine, useEngineStoreApi } from "../../state/engineContext";
 import { selectConnected } from "../../state/engineStore";
 
-/** Failures that mean the device was listed by Windows but would not talk (the only "Couldn't connect"). */
+/** Failures that mean the device was listed by Windows but would not talk (the only "Connection failed"). */
 const ATTEMPT_FAILURES = new Set(["busy", "timeout", "refused"]);
 
 /**
  * The not-connected screen for an engine status (`engine:status`):
  * - `disconnected` with a `busy`, `timeout` or `refused` reason while Windows
- *   lists the device: error ("Couldn't connect"), whose Try again calls
+ *   lists the device: error ("Connection failed"), whose Try again calls
  *   `onRetry`;
- * - otherwise, with remembered headphones: offline ("Off or out of range")
- *   when `windowsConnected` is false (including a `notConnectedToWindows`
- *   failure and a link lost because they switched off), else idle
- *   ("Connected to Windows": Connect is the call to action); with nothing
- *   remembered, searching (or the error for a failed attempt);
+ * - otherwise, with remembered headphones: offline ("Headphones off or
+ *   disconnected") when `windowsConnected` is false (including a
+ *   `notConnectedToWindows` failure and a link lost because they switched
+ *   off), else idle ("Ready to connect": Connect is the call to action); with
+ *   nothing remembered, searching ("No headphones set up"), or the error for
+ *   a failed attempt;
  * - `discovering`: offline when Windows does not list the remembered
- *   headphones, else searching (named after them if any);
+ *   headphones, connecting when it does (the engine is reaching for them),
+ *   else searching;
  * - `connecting`, `initialising`, and `ready` before the first snapshot:
  *   connecting to the device the engine named; `reconnecting` when the reason
  *   is `reconnectingAfterSettingChange`.
@@ -51,14 +53,14 @@ export function toConnectionView(
       return listed ? { kind: "idle", deviceName: title } : { kind: "offline", deviceName: title };
     }
     case "discovering":
-      if (title && !listed) return { kind: "offline", deviceName: title };
-      return title ? { kind: "searching", deviceName: title } : { kind: "searching" };
+      if (!title) return { kind: "searching" };
+      return listed ? { kind: "connecting", deviceName: statusName ?? title } : { kind: "offline", deviceName: title };
     case "connecting":
     case "initialising":
     case "ready":
       return {
         kind: "connecting",
-        deviceName: statusName ?? title ?? "your headphones",
+        deviceName: statusName ?? title ?? "Headphones",
         ...(status.reason === "reconnectingAfterSettingChange" ? { reconnecting: true } : {}),
       };
   }

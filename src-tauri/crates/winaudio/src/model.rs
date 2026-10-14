@@ -258,8 +258,7 @@ impl Change {
                 format!("Make {name} the {what}.")
             }
             Self::UseHandsFreeForCommunications { .. } => {
-                "Use the headphones' hands-free audio and microphone for voice chat and calls."
-                    .into()
+                "Use the headphone mic for voice chat and calls.".into()
             }
             Self::SetEnhancements { enabled, .. } => {
                 format!("Turn audio enhancements {}.", on_off(*enabled))
@@ -275,27 +274,23 @@ impl Change {
             Self::SetExclusiveMode {
                 allowed, priority, ..
             } => match (allowed, priority) {
-                (false, _) => "Do not let apps take exclusive control.".into(),
-                (true, false) => "Let apps take exclusive control, without priority.".into(),
-                (true, true) => "Let apps take exclusive control, with priority.".into(),
+                (false, _) => "Turn exclusive mode off.".into(),
+                (true, false) => "Allow exclusive mode.".into(),
+                (true, true) => "Allow exclusive mode, with priority.".into(),
             },
             Self::SetDucking { mode } => {
                 format!("During calls: {}.", mode.label().to_lowercase())
             }
             Self::SetMonoAudio { enabled } => format!("Turn mono audio {}.", on_off(*enabled)),
             Self::SetHandsFree { enabled, .. } => {
-                format!(
-                    "Turn the hands-free profile (headphone mic, mono sound) {}.",
-                    on_off(*enabled)
-                )
+                format!("Turn the hands-free profile {}.", on_off(*enabled))
             }
             Self::SetAbsoluteVolumeDisabled { disabled } => {
                 format!("Turn absolute volume {}.", on_off(!*disabled))
             }
-            Self::SetAdapterPowerSaving { allowed } => format!(
-                "{} Windows to turn off the Bluetooth adapter to save power.",
-                if *allowed { "Allow" } else { "Do not allow" }
-            ),
+            Self::SetAdapterPowerSaving { allowed } => {
+                format!("Turn adapter power saving {}.", on_off(*allowed))
+            }
         }
     }
 }

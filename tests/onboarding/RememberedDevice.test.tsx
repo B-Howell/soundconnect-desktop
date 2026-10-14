@@ -56,18 +56,19 @@ describe("remembered headphones at launch", () => {
 
     const page = screen.getByRole("region", { name: "Status" });
     expect(within(page).getByRole("heading", { name: "WH-1000XM4" })).toBeInTheDocument();
-    expect(page).toHaveTextContent("Connected to Windows");
-    expect(page).toHaveTextContent("Select Connect to control them from SoundConnect.");
-    expect(page).not.toHaveTextContent("Looking for");
+    expect(page).toHaveTextContent("Ready to connect");
+    // One line: no helper sentence.
+    expect(page.querySelector(".remembered-device__advice")).toBeNull();
+    expect(page).not.toHaveTextContent("No headphones set up");
     expect(page.querySelector("img.device-image[data-model=\"WH-1000XM4\"]")).not.toBeNull();
     // The rail names the remembered headphones too.
     const rail = screen.getByRole("complementary");
     expect(rail).toHaveTextContent("WH-1000XM4");
-    expect(rail).toHaveTextContent("Connected to Windows");
+    expect(rail).toHaveTextContent("Ready to connect");
     // Nothing was asked of the engine but the stored auto-connect choice (off).
     await expect.poll(() => commands(api)).toEqual([{ type: "setAutoConnect", enabled: false }]);
 
-    await user.click(within(page).getByRole("button", { name: "Open Bluetooth settings" }));
+    await user.click(within(page).getByRole("button", { name: "Bluetooth settings" }));
     expect(api.send).toHaveBeenLastCalledWith({ type: "openBluetoothSettings" });
     await user.click(within(page).getByRole("button", { name: "Connect" }));
     expect(api.send).toHaveBeenLastCalledWith({ type: "connect", address: XM4 });
@@ -81,10 +82,8 @@ describe("remembered headphones at launch", () => {
     act(() =>
       store.getState().receiveStatus({ state: "disconnected", address: XM4, reason: "busy", remembered }),
     );
-    expect(page).toHaveTextContent("Couldn't connect");
-    expect(page).toHaveTextContent(
-      "Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again.",
-    );
+    expect(page).toHaveTextContent("Connection failed");
+    expect(page).toHaveTextContent("Another app is using the headphones.");
     api.send.mockClear();
     await user.click(within(page).getByRole("button", { name: "Try again" }));
     expect(api.send).toHaveBeenCalledWith({ type: "connect", address: XM4 });
@@ -113,12 +112,12 @@ describe("setup while headphones are remembered", () => {
     act(() =>
       store.getState().receiveStatus({ state: "disconnected", address: "F8:4E:17:00:00:01", reason: "notConnectedToWindows", remembered: null }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("They are off, out of range, or not connected to Windows.");
-    await user.click(screen.getByRole("button", { name: "Cancel setup" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Headphones off or disconnected.");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(within(screen.getByRole("region", { name: "Status" })).getByRole("heading", { name: "WH-1000XM4" })).toBeInTheDocument();
   });
 
-  it("does not skip to All set after Forget when an earlier Connect succeeded", async () => {
+  it("does not skip to Setup complete after Forget when an earlier Connect succeeded", async () => {
     const user = userEvent.setup();
     const { store } = rememberedStore();
     renderWithStore(<AppRoot />, store);
@@ -132,7 +131,7 @@ describe("setup while headphones are remembered", () => {
     act(() => store.getState().receiveStatus({ state: "disconnected", remembered: null }));
     await user.click(screen.getByRole("button", { name: "Get started" }));
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByRole("heading", { level: 1, name: "Choose your headphones" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Choose headphones" })).toBeInTheDocument();
   });
 
   it("does not open the wizard when the first status read fails", async () => {
@@ -154,7 +153,7 @@ describe("Settings: Headphones", () => {
     const { api, store } = rememberedStore();
     useNavStore.getState().setPage("settings");
     renderWithStore(<AppRoot />, store);
-    const toggle = screen.getByRole("switch", { name: "Connect automatically when the headphones appear" });
+    const toggle = screen.getByRole("switch", { name: "Connect automatically" });
     expect(toggle).not.toBeChecked();
     await user.click(toggle);
     expect(useSettingsStore.getState().autoConnect).toBe(true);
@@ -169,7 +168,7 @@ describe("Settings: Headphones", () => {
     await user.click(screen.getByRole("button", { name: /Set up new headphones/ }));
     expect(screen.getByRole("heading", { level: 1, name: "Pair with Windows" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Pages" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Cancel setup" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("heading", { level: 1, name: "Status" })).toBeInTheDocument();
   });
 

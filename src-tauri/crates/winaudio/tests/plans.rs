@@ -199,7 +199,7 @@ fn mono_mic_on_the_recording_turns_hands_free_on_then_uses_it() {
     );
     assert_eq!(
         plan.changes[0].summary,
-        "Turn the hands-free profile (headphone mic, mono sound) on."
+        "Turn the hands-free profile on."
     );
     assert!(plan.changes[0].admin && !plan.changes[1].admin);
     assert_eq!(plan.notes, vec![NOTE_CALLS_MONO.to_string()]);

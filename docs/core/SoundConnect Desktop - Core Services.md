@@ -362,14 +362,16 @@ and `MouseButtonState::Up` shows the window; the right button opens the menu).
 - Tooltip (`tooltip_text`): Ready gives `WH-1000XM4 · 90% · Noise cancelling`
   (model name from `texts.modelName`, else the status name; the main battery,
   else the lower earbud; then Noise cancelling / Wind noise reduction /
-  Ambient sound / Noise control off). Connecting or Initialising gives
-  `SoundConnect · Connecting to <name>`, Discovering `SoundConnect · Looking
-  for headphones`, Disconnected `SoundConnect · Not connected`. Capped at
-  127 characters, the Windows limit.
+  Ambient sound / Noise control off). Otherwise `SoundConnect · <state>`,
+  where `state_label` mirrors the renderer's `connectionCopy` from the
+  status's `remembered`, `windowsConnected` and `reason` (0.1.10 copy
+  register): "No headphones set up", "Headphones off or disconnected",
+  "Ready to connect", "Connecting…", "Reconnecting…" or "Connection failed".
+  Capped at 127 characters, the Windows limit.
 - Menu (`noise_menu_model`): with a `noiseView`, `CheckMenuItem`s in the
   renderer's order and with its labels: Noise cancelling (`canCancel`), Wind
   (`canWind`), Ambient (`canAmbient`), Off (always), the current mode
-  checked. Without one, a disabled "Not connected". Then a separator,
+  checked. Without one, a disabled line with the same `state_label`. Then a separator,
   "Show SoundConnect" and "Quit" (`app.exit(0)`, the way out while keep
   running is on). A noise click sends `EngineCommand::SetNoise { mode,
   ambient_level: None, focus_on_voice: None }`, in view terms, so V1 wind and

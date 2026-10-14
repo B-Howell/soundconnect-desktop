@@ -36,23 +36,22 @@ describe("connection-quality change", () => {
   it("asks before the headphones disconnect, in words", () => {
     expect(alertCopy(confirmation)).toEqual({
       title: "Change connection quality?",
-      message:
-        "Your headphones disconnect and reconnect to apply it, so audio stops for a few seconds. SoundConnect reconnects to them by itself.",
+      message: "Audio stops for a few seconds while the headphones reconnect.",
     });
   });
 
   it("shows the reconnect as reconnecting, not as a failure", () => {
     const view = toConnectionView(reconnecting, retry);
     expect(view).toEqual({ kind: "connecting", deviceName: "WH-1000XM4", reconnecting: true });
-    expect(connectionCopy(view).title).toBe("Reconnecting to WH-1000XM4");
+    expect(connectionCopy(view)).toEqual({ title: "Reconnecting…" });
     render(<ConnectionStatus view={view} />);
-    expect(screen.getByRole("heading", { name: "Reconnecting to WH-1000XM4" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reconnecting…" })).toBeInTheDocument();
   });
 
   it("a plain connect keeps its own copy", () => {
     const view = toConnectionView({ ...reconnecting, reason: undefined }, retry);
     expect(view).toEqual({ kind: "connecting", deviceName: "WH-1000XM4" });
-    expect(connectionCopy(view).title).toBe("Connecting to WH-1000XM4");
+    expect(connectionCopy(view)).toEqual({ title: "Connecting…" });
   });
 
   it("is not a failure reason for a connect attempt", () => {

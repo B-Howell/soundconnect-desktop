@@ -21,20 +21,19 @@ export function StartupRows() {
     <>
       <ToggleRow
         title="Start with Windows"
-        subtitle="Open SoundConnect when you sign in."
         checked={startWithWindows}
         onChange={setStartWithWindows}
       />
       <ToggleRow
         title="Start minimized"
-        subtitle="Start in the tray without opening the window."
+        subtitle="Open to the tray."
         checked={startMinimized}
         onChange={setStartMinimized}
         disabled={!startWithWindows}
       />
       <ToggleRow
         title="Keep running in the tray"
-        subtitle="Closing the window keeps your headphones connected."
+        subtitle="Closing the window keeps the connection."
         checked={keepRunningInTray}
         onChange={setKeepRunningInTray}
       />

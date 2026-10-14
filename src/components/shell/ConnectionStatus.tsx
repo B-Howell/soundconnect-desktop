@@ -10,6 +10,10 @@ export interface ConnectionStatusProps {
   view: ConnectionView;
   /** Model name for the product photo (e.g. the remembered device's); defaults to `view.deviceName`. */
   model?: string;
+  /** Opens the setup wizard (the "No headphones set up" card's Set up). */
+  onSetUp?: () => void;
+  /** Opens Windows Bluetooth settings (the failure card's second button). */
+  onOpenBluetoothSettings?: () => void;
 }
 
 /**
@@ -18,28 +22,20 @@ export interface ConnectionStatusProps {
  * state, so it survives tab switches. After "Try again", focus moves to the
  * new card's heading instead of falling to the page when the button disappears.
  */
-export function ConnectionStatus({ view, model }: ConnectionStatusProps) {
+export function ConnectionStatus({ view, model, onSetUp, onOpenBluetoothSettings }: ConnectionStatusProps) {
   const { target, markAction } = useFocusAfterAction<HTMLHeadingElement>(view.kind);
   const photoModel = model || view.deviceName;
 
   let card;
   switch (view.kind) {
     case "searching":
-      card = <ConnectionSearching model={photoModel} titleRef={target} />;
+      card = <ConnectionSearching model={photoModel} titleRef={target} onSetUp={onSetUp} />;
       break;
     // The Status page shows a remembered device's own card (`RememberedDeviceCard`);
     // this plain card covers any other place that shows the idle state.
     case "offline":
     case "idle": {
-      const { title, description } = connectionCopy(view);
-      card = (
-        <ConnectionState
-          visual={<ActivityPulse icon="bluetooth" />}
-          title={title}
-          description={description}
-          titleRef={target}
-        />
-      );
+      card = <ConnectionState visual={<ActivityPulse icon="bluetooth" />} title={connectionCopy(view).title} titleRef={target} />;
       break;
     }
     case "connecting":
@@ -59,6 +55,7 @@ export function ConnectionStatus({ view, model }: ConnectionStatusProps) {
           model={photoModel}
           message={view.message}
           titleRef={target}
+          onOpenBluetoothSettings={onOpenBluetoothSettings}
           onRetry={() => {
             markAction();
             view.onRetry();

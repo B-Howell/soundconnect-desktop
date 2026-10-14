@@ -10,7 +10,7 @@ import { PlaceholderMessage } from "./PlaceholderMessage";
 export function NotConnectedSection() {
   return (
     <Card>
-      <PlaceholderMessage>Connect your headphones to change these settings.</PlaceholderMessage>
+      <PlaceholderMessage>Connect headphones to change these settings.</PlaceholderMessage>
     </Card>
   );
 }

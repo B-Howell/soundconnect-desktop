@@ -72,7 +72,7 @@ describe("AmbientSoundControlCard", () => {
     expect(screen.getByRole("radio", { name: "Noise cancelling" })).toHaveAttribute("aria-checked", "true");
     expect(slider()).toHaveAttribute("aria-valuetext", "Wind noise reduction");
     expect(slider()).toHaveAttribute("max", "21");
-    expect(screen.getByText(/two lowest positions are Noise cancelling and Wind noise reduction/)).toBeInTheDocument();
+    expect(screen.getByText("Lowest positions: Noise cancelling, Wind noise reduction.")).toBeInTheDocument();
   });
 
   it("sends Noise cancelling from wind mode, although that segment already shows checked", async () => {

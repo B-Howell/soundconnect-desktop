@@ -25,7 +25,7 @@ export function useUpdateBannerProps(store: UpdaterStore, onNotes: () => void): 
     case "error":
       return {
         state: "error",
-        message: error ?? "The update failed.",
+        message: error ?? "",
         // A failed download retries the same update; a failed check checks again.
         onRetry: () => void (update ? install() : check()),
         onDismiss: dismiss,

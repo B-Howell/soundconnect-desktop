@@ -35,13 +35,13 @@ export function PairStep({
       index={index}
       count={count}
       title="Pair with Windows"
-      lead="New headphones, or never used with this PC? Pair them in Windows first. Already paired? Select Continue."
+      lead="Already paired? Select Continue."
       primary={<SheetButton onPress={onContinue}>Continue</SheetButton>}
       secondary={<StepNavigation onBack={onBack} onCancel={onCancel} />}
     >
       <PairingSteps family={family} onFamilyChange={onFamilyChange} />
       <SheetButton variant="secondary" onPress={onOpenBluetoothSettings}>
-        Open Windows Bluetooth settings
+        Bluetooth settings
       </SheetButton>
     </SetupCard>
   );

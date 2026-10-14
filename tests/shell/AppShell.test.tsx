@@ -23,7 +23,7 @@ describe("AppShell", () => {
     renderWithStore(<AppShell />, createEngineStore(spyApi()));
     expect(screen.getByRole("heading", { level: 1, name: "Status" })).toBeInTheDocument();
     const page = screen.getByRole("region", { name: "Status" });
-    expect(page).toHaveTextContent("Looking for your headphones");
+    expect(page).toHaveTextContent("No headphones set up");
     expect(screen.queryByRole("meter")).toBeNull();
     // The rail still renders while nothing is connected, with every page enabled.
     const nav = screen.getByRole("navigation", { name: "Pages" });
@@ -37,7 +37,7 @@ describe("AppShell", () => {
     ]);
     for (const item of within(nav).getAllByRole("button")) expect(item).toBeEnabled();
     expect(within(nav).getByRole("button", { name: "Status" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("Not connected")).toBeInTheDocument();
+    expect(within(screen.getByRole("complementary")).getByText("No headphones set up")).toBeInTheDocument();
   });
 
   it("switches the page and its title when a rail item is chosen", async () => {
@@ -48,13 +48,14 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "Devices" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Status" })).not.toHaveAttribute("aria-current");
     // While it fades out, the leaving page is hidden from assistive tech.
-    const leaving = screen.getByText("Looking for your headphones");
-    expect(leaving.closest("[aria-hidden='true'][inert]")).not.toBeNull();
+    const leaving = document.querySelector(".connection-state__title");
+    expect(leaving).toHaveTextContent("No headphones set up");
+    expect(leaving?.closest("[aria-hidden='true'][inert]")).not.toBeNull();
     expect(screen.getByRole("region", { name: "Devices" })).toHaveTextContent(
-      "Connect your headphones to change these settings.",
+      "Connect headphones to change these settings.",
     );
     // The leaving page fades out; once gone, only the new page remains.
-    await waitFor(() => expect(screen.queryByText("Looking for your headphones")).toBeNull());
+    await waitFor(() => expect(document.querySelector(".connection-state__title")).toBeNull());
   });
 
   it("opens Equalizer from the Sound overview's entry card, titles it 'Sound › Equalizer', and the crumb goes back", async () => {
@@ -90,9 +91,10 @@ describe("AppShell", () => {
     // The remembered card also names the device, so wait for the connected card's battery meter.
     expect(await screen.findByRole("meter", { name: "Battery" })).toHaveAttribute("aria-valuetext", "90%");
     expect(screen.getByRole("heading", { name: "WH-1000XM4" })).toBeInTheDocument();
-    // The rail's device block shows the same device, connected, with battery and codec chips.
+    // The rail's device block shows the same device with battery and codec chips; the battery
+    // stands in for a "Connected" line.
     const nav = screen.getByRole("complementary");
-    expect(within(nav).getByText("Connected")).toBeInTheDocument();
+    expect(within(nav).queryByText("Connected")).toBeNull();
     expect(nav).toHaveTextContent("Battery 90%");
     expect(nav).toHaveTextContent("Codec AAC");
   });
@@ -106,17 +108,17 @@ describe("AppShell connection announcer", () => {
     const store = createEngineStore(spyApi());
     renderWithStore(<AppShell />, store);
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Looking for your headphones");
+    expect(status).toHaveTextContent("No headphones set up");
 
     act(() => store.getState().receiveStatus({ state: "connecting", deviceName: "WH-1000XM4" }));
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent("Connecting to WH-1000XM4");
+    expect(status).toHaveTextContent("Connecting…");
 
     await user.click(screen.getByRole("button", { name: "System" }));
     act(() => store.getState().receiveStatus(readyStatus));
     act(() => store.getState().receiveSnapshot(xm4()));
     expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent("Connected to WH-1000XM4.");
+    expect(status).toHaveTextContent("Connected.");
   });
 
   it("fills the alert region only while an error shows", () => {
@@ -126,7 +128,7 @@ describe("AppShell connection announcer", () => {
     expect(alert).toBeEmptyDOMElement();
     act(() => store.getState().receiveStatus({ state: "disconnected", lastError: "timeout" }));
     expect(screen.getByRole("alert")).toBe(alert);
-    expect(alert).toHaveTextContent("Couldn't connect to your headphones");
+    expect(alert).toHaveTextContent("Connection failed.");
     expect(alert).not.toHaveTextContent("Try again");
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });

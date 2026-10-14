@@ -11,7 +11,7 @@ export function FocusOnVoiceRow({ checked, onChange, disabled }: FocusOnVoiceRow
   return (
     <ToggleRow
       title="Focus on voice"
-      subtitle="Lets voices through, keeps other sound down"
+      subtitle="Lets voices through"
       checked={checked}
       onChange={onChange}
       disabled={disabled}

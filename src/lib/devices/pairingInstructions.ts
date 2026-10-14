@@ -11,20 +11,18 @@ export interface PairingInstructions {
   family: DeviceFamily;
   /** Short name for the family choice ("Over-ear", "Earbuds"). */
   label: string;
-  /** Ordered steps, one sentence each. */
+  /** The two steps, one short sentence each (shown as bullets). */
   steps: readonly string[];
 }
 
-const ADD_IN_WINDOWS =
-  "In Windows Bluetooth settings, choose Add device, then Bluetooth, and pick your headphones from the list.";
+const ADD_IN_WINDOWS = "In Bluetooth settings, select Add device, then the headphones.";
 
 export const pairingInstructions: Readonly<Record<DeviceFamily, PairingInstructions>> = {
   overEar: {
     family: "overEar",
     label: "Over-ear",
     steps: [
-      "Switch the headphones off.",
-      "Press and hold the power button for about 7 seconds, until you hear \"Bluetooth pairing\" and the light flashes blue.",
+      "With the headphones off, hold the power button for 7 seconds.",
       ADD_IN_WINDOWS,
     ],
   },
@@ -32,8 +30,7 @@ export const pairingInstructions: Readonly<Record<DeviceFamily, PairingInstructi
     family: "earbuds",
     label: "Earbuds",
     steps: [
-      "Put both earbuds in your ears.",
-      "Hold your fingers on both touch sensors for about 5 seconds, until you hear \"Bluetooth pairing\".",
+      "With both earbuds in, hold both touch sensors for 5 seconds.",
       ADD_IN_WINDOWS,
     ],
   },

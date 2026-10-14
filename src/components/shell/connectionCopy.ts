@@ -7,7 +7,7 @@ import type { ConnectFailureReason } from "../../lib/engine/types";
  * `offline` is a remembered device Windows does not list as connected (off or
  * out of range). `idle` is one Windows lists but the engine is not connecting
  * to (auto-connect off): nothing happens until the user selects Connect.
- * `searching` is the engine looking with nothing remembered. `error` is only
+ * `searching` is nothing remembered ("No headphones set up"). `error` is only
  * a connect attempt that failed while Windows listed the device.
  */
 export type ConnectionView =
@@ -30,85 +30,53 @@ export type ConnectionView =
     };
 
 export interface ConnectionCopy {
+  /** The state in a few words; the only line for every state but a failure. */
   title: string;
-  description: string;
+  /** The failure's reason, one short sentence. Errors only (and only when the reason is known). */
+  description?: string;
 }
 
 /**
- * The friendly title and sentence for each state, shared by the visible card
- * and the screen-reader announcer so the two can never disagree.
+ * The words for each state, shared by the cards, the rail and the
+ * screen-reader announcer so they never disagree. One line per state (see
+ * Renderer, Copy register): no advice and no reassurance; only a failed
+ * attempt adds its reason.
  */
 export function connectionCopy(view: ConnectionView): ConnectionCopy {
   switch (view.kind) {
     case "searching":
-      return view.deviceName
-        ? {
-            title: `Looking for ${view.deviceName}`,
-            description: "SoundConnect connects as soon as Windows is connected to them.",
-          }
-        : {
-            title: "Looking for your headphones",
-            description: "Connect them to Windows Bluetooth first.",
-          };
+      return { title: "No headphones set up" };
     case "offline":
-      return {
-        title: `${view.deviceName} is off or out of range`,
-        description:
-          "Switch them on and keep them nearby. SoundConnect notices within a few seconds once Windows connects to them.",
-      };
+      return { title: "Headphones off or disconnected" };
     case "idle":
-      return {
-        title: `${view.deviceName} is connected to Windows`,
-        description: "Select Connect to control them from SoundConnect.",
-      };
+      return { title: "Ready to connect" };
     case "connecting":
-      return view.reconnecting
-        ? {
-            title: `Reconnecting to ${view.deviceName}`,
-            description: "They restarted their Bluetooth connection to apply your setting. This takes a few seconds.",
-          }
-        : {
-            title: `Connecting to ${view.deviceName}`,
-            description: "This usually takes a few seconds.",
-          };
-    case "error":
-      return {
-        title: view.deviceName ? `Couldn't connect to ${view.deviceName}` : "Couldn't connect to your headphones",
-        description: failureText(view.reason),
-      };
+      return { title: view.reconnecting ? "Reconnecting…" : "Connecting…" };
+    case "error": {
+      const reason = failureText(view.reason);
+      return reason ? { title: "Connection failed", description: reason } : { title: "Connection failed" };
+    }
   }
 }
 
 /** The connection state in a few words, for the rail and the remembered-device card. */
 export function connectionStateLabel(view: ConnectionView): string {
-  switch (view.kind) {
-    case "searching":
-      return "Not connected";
-    case "offline":
-      return "Off or out of range";
-    case "idle":
-      return "Connected to Windows";
-    case "connecting":
-      return view.reconnecting ? `Reconnecting to ${view.deviceName}` : "Connecting…";
-    case "error":
-      return "Couldn't connect";
-  }
+  return connectionCopy(view).title;
 }
 
 /** What the shell announces: the not-connected states, or the connected device. */
 export type AnnouncedConnection = ConnectionView | { kind: "connected"; deviceName?: string };
 
 /**
- * Text for the shell's two live regions: "title. description" politely for
- * searching and connecting, the same as an alert for an error (and nothing
- * polite meanwhile, so each error is read once), and "Connected to {name}."
- * once connected.
+ * Text for the shell's two live regions: the state politely, an error as an
+ * alert ("Connection failed. {reason}", and nothing polite meanwhile, so each
+ * error is read once), and "Connected." once connected.
  */
 export function connectionAnnouncement(view: AnnouncedConnection): { status: string; alert: string } {
   if (view.kind === "connected") {
-    return { status: `Connected to ${view.deviceName ?? "your headphones"}.`, alert: "" };
+    return { status: "Connected.", alert: "" };
   }
   const copy = connectionCopy(view);
-  const spoken = `${copy.title}. ${copy.description}`;
+  const spoken = copy.description ? `${copy.title}. ${copy.description}` : `${copy.title}.`;
   return view.kind === "error" ? { status: "", alert: spoken } : { status: spoken, alert: "" };
 }

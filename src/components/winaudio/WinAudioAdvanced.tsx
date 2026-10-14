@@ -32,8 +32,8 @@ export function WinAudioAdvanced({ onRestore, onForgetRestorePoint, onOpenSoundS
             title="Restore previous settings"
             subtitle={
               onRestore
-                ? "Puts back what these settings were before SoundConnect first changed them."
-                : "Nothing to restore yet. SoundConnect saves the current settings before its first change."
+                ? "Settings from before the first change."
+                : "No restore point yet."
             }
             disclosure={!!onRestore}
             disabled={busy}
@@ -42,14 +42,13 @@ export function WinAudioAdvanced({ onRestore, onForgetRestorePoint, onOpenSoundS
           {onForgetRestorePoint ? (
             <ListRow
               title="Forget restore point"
-              subtitle="Keeps the settings as they are now and drops the saved ones."
+              subtitle="Keeps the current settings."
               disabled={busy}
               onPress={onForgetRestorePoint}
             />
           ) : null}
           <ListRow
             title="Open Windows Sound settings"
-            subtitle="Spatial sound and the rest of Windows' own sound options."
             disclosure
             onPress={onOpenSoundSettings}
           />

@@ -3,7 +3,7 @@ import { TextButton } from "../primitives/TextButton";
 import "./ConnectFailureNote.css";
 
 export interface ConnectFailureNoteProps {
-  /** What happened and what to do (`failureText`). */
+  /** The failure's reason in one line (`failureText`), else "Connection failed.". */
   text: string;
   onRetry: () => void;
 }

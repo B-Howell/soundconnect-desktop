@@ -44,8 +44,7 @@ export function PairedDeviceList({ devices, onAction, actionsSupported = true, d
       {actionsSupported ? null : (
         <SectionFooter>
           <p>
-            These headphones do not let a computer connect, switch or forget their paired devices. Use the device
-            itself, or Sony&apos;s app on a phone.
+            These headphones can&apos;t manage paired devices from a PC.
           </p>
         </SectionFooter>
       )}

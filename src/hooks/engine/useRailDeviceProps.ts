@@ -22,7 +22,7 @@ export interface RailDeviceSource {
  * The rail's device block: once connected, the header's name, battery and
  * codec with the state "Connected"; otherwise the name the engine's status
  * carries, else the remembered headphones' name (else "Headphones"), and the
- * connection screen's state in a few words ("Not connected", "Connecting…").
+ * connection screen's state in a few words ("Ready to connect", "Connecting…").
  */
 export function toRailDeviceProps({ connected, header, view, statusName, rememberedName }: RailDeviceSource): Omit<RailDeviceProps, "collapsed"> {
   if (connected && header) {

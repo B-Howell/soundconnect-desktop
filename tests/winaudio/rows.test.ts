@@ -36,7 +36,7 @@ describe("winAudioCards on the recording", () => {
     expect(row(s, "exclusive")).toMatchObject({ current: "Allowed, with priority", ok: true, counts: false });
     expect(row(s, "absoluteVolume")).toMatchObject({ current: "On", ok: true, admin: true });
     expect(row(s, "powerSaving")).toMatchObject({ current: "On", recommended: "Off", ok: false, counts: false, admin: true });
-    expect(row(s, "powerSaving").description).toContain("MediaTek Bluetooth Adapter");
+    expect(row(s, "powerSaving").description).toBe("Can cause dropouts and slow reconnects.");
     expect(row(s, "codec")).toMatchObject({ current: "AAC" });
   });
 
@@ -62,8 +62,8 @@ describe("modes and drift", () => {
     s.duckingMode = "reduce80";
     const drift = modeDrift(s);
     expect(drift).toEqual([
-      "The headphones are not the default playback device.",
-      "Voice chat and calls do not play on the headphones' stereo output.",
+      "The headphones aren't the default playback device.",
+      "Calls don't play on the headphones' stereo output.",
     ]);
     expect(attentionCount(winAudioCards(s), drift)).toBe(4);
   });
@@ -79,7 +79,7 @@ describe("modes and drift", () => {
     s.handsFreeEnabled = true;
     s.handsFreeRender = { id: "hf-out", name: "Headset (WH-1000XM4)", state: "active", bluetooth: true };
     s.handsFreeCapture = { id: "hf-mic", name: "Headset (WH-1000XM4)", state: "active", bluetooth: true };
-    expect(modeDrift(s)).toEqual(["Voice chat does not use the headphones' hands-free audio and mic."]);
+    expect(modeDrift(s)).toEqual(["Voice chat doesn't use the headphone mic."]);
     expect(applyToSnapshot(s, { kind: "useHandsFreeForCommunications", address: s.address })).toBeNull();
     expect(modeDrift(s)).toEqual([]);
   });

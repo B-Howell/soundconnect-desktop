@@ -19,7 +19,7 @@ export interface PlanPreviewSheetProps {
 }
 
 /** The prompt line shown when the plan holds admin changes. */
-export const ADMIN_PROMPT_NOTE = "Windows will ask for permission once for the items marked with a shield.";
+export const ADMIN_PROMPT_NOTE = "Windows asks for permission for items marked with a shield.";
 
 /**
  * Lists exactly what switching to a mode will change before anything changes, marks admin

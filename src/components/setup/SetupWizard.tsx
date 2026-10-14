@@ -19,7 +19,7 @@ export interface SetupWizardProps {
 
 /**
  * The first-run setup, as Sony's phone app does it for new headphones:
- * Welcome, Pair with Windows, Choose your headphones, All set. A container:
+ * Welcome, Pair with Windows, Choose headphones, Setup complete. A container:
  * the hooks hold the scan, the connect attempt and the navigation; the steps
  * are presentational.
  */
@@ -69,7 +69,7 @@ export function SetupWizard({ step }: SetupWizardProps) {
         <DoneStep
           index={index}
           count={count}
-          modelName={header?.name || rememberedTitle(remembered) || "Your headphones"}
+          modelName={header?.name || rememberedTitle(remembered) || "Headphones"}
           firmware={header?.firmware || remembered?.firmware || undefined}
           onDone={wizard.finish}
         />

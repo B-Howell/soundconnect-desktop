@@ -34,10 +34,14 @@
   pointer-events: none;
 }
 
+/* Never shrunk by the column: a two-line state grows the device card instead
+   of letting it slide under the navigation. */
 .nav-rail__device {
+  flex: none;
   padding: var(--space-2) var(--space-3) var(--space-4);
 }
 
 .nav-rail__nav {
+  flex: none;
   padding: 0 var(--space-3) var(--space-4);
 }

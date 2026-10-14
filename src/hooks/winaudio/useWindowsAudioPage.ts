@@ -16,7 +16,7 @@ export type WindowsAudioPageView =
 
 /** Shown when Windows has the headphones' endpoint but they are not connected now. */
 export const NOT_CONNECTED_NOTICE =
-  "The headphones are not connected to Windows now. Settings show their last known state; defaults cannot point at them until they connect.";
+  "Headphones off or disconnected. Showing last known settings.";
 
 /**
  * Wires the Windows audio page: which headphones (`useWinAudioTarget`), the

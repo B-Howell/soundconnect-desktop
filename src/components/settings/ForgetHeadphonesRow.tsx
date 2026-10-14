@@ -33,7 +33,7 @@ export function ForgetHeadphonesRow({ name, onConfirm }: ForgetHeadphonesRowProp
         open={sheet.open}
         onClose={sheet.hide}
         title={`Forget ${name}?`}
-        message="SoundConnect stops remembering them and goes back to setup. They stay paired with Windows; remove them in Bluetooth settings if you no longer use them."
+        message="They stay paired with Windows."
         initialFocus={cancel}
       >
         <SheetActions>

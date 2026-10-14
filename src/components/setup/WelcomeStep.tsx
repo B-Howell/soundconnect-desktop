@@ -19,13 +19,11 @@ export function WelcomeStep({ index, count, onStart, onCancel }: WelcomeStepProp
       count={count}
       visual={<img className="welcome-step__icon" src="/icon.png" alt="" />}
       title="Welcome to SoundConnect"
-      lead="Control your Sony headphones from your PC: noise cancelling, the equalizer and the settings you would otherwise change in the phone app."
+      lead="Control Sony headphones from your PC."
       primary={<SheetButton onPress={onStart}>Get started</SheetButton>}
       secondary={<StepNavigation onCancel={onCancel} />}
     >
-      <p className="welcome-step__note">
-        SoundConnect is an independent, open project. {SONY_DISCLAIMER}
-      </p>
+      <p className="welcome-step__note">{SONY_DISCLAIMER}</p>
     </SetupCard>
   );
 }

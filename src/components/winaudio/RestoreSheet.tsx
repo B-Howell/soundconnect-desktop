@@ -17,7 +17,7 @@ export function RestoreSheet({ open, onConfirm, onClose }: RestoreSheetProps) {
       open={open}
       onClose={onClose}
       title="Restore Windows settings?"
-      message="Puts back what these settings were before SoundConnect first changed them. Windows may ask for permission for the hands-free profile, absolute volume or the adapter."
+      message="Restores the settings from before the first change. Windows may ask for permission."
       initialFocus={cancel}
     >
       <SheetActions>

@@ -6,12 +6,13 @@ import { ConnectionError } from "../../src/components/shell/ConnectionError";
 const raw = "RFCOMM connect failed: 0x80070079";
 
 describe("ConnectionError", () => {
-  it("leads with friendly text and keeps the raw message hidden until Details is opened", async () => {
+  it("says Connection failed and keeps the raw message hidden until Details is opened", async () => {
     const user = userEvent.setup();
     render(<ConnectionError deviceName="WH-1000XM4" message={raw} onRetry={() => undefined} />);
 
-    expect(screen.getByRole("heading", { name: "Couldn't connect to WH-1000XM4" })).toBeInTheDocument();
-    expect(screen.getByText(/connected in Windows Bluetooth settings/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Connection failed" })).toBeInTheDocument();
+    // No reason from the engine: the title is the only line.
+    expect(document.querySelector(".connection-state__description")).toBeNull();
 
     const details = screen.getByRole("button", { name: "Details" });
     expect(details).toHaveAttribute("aria-expanded", "false");
@@ -25,9 +26,12 @@ describe("ConnectionError", () => {
     expect(screen.getByText(raw)).not.toBeVisible();
   });
 
-  it("names the headphones generically when no device was found", () => {
-    render(<ConnectionError message={raw} onRetry={() => undefined} />);
-    expect(screen.getByRole("heading", { name: "Couldn't connect to your headphones" })).toBeInTheDocument();
+  it("offers Bluetooth settings beside Try again when given the handler", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    render(<ConnectionError message={raw} onRetry={() => undefined} onOpenBluetoothSettings={onOpen} />);
+    await user.click(screen.getByRole("button", { name: "Bluetooth settings" }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
   it("calls onRetry from Try again", async () => {

@@ -36,12 +36,11 @@
   user-select: none;
 }
 
+/* Inline text with an inline dot, so a two-line state ("Headphones off or
+   disconnected") wraps balanced with the dot on its first line. */
 .rail-device__state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
   font-size: var(--font-size-sm);
+  text-wrap: balance;
   line-height: var(--leading-tight);
   color: var(--text-secondary);
   user-select: none;
@@ -50,7 +49,9 @@
 /* A status dot: green while connected, quiet grey otherwise. */
 .rail-device__state::before {
   content: "";
-  flex: none;
+  display: inline-block;
+  vertical-align: 0.1em;
+  margin-right: var(--space-1);
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-pill);

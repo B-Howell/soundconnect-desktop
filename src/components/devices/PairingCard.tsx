@@ -40,8 +40,7 @@ export function PairingCard({ pairing, deviceName, onPairingChange, disabled }: 
       </GroupedList>
       <SectionFooter>
         <p>
-          The headphones enter pairing mode. Then choose {deviceName} in the new phone or computer's Bluetooth
-          settings.
+          Select {deviceName} in the other device&apos;s Bluetooth settings.
         </p>
       </SectionFooter>
     </>

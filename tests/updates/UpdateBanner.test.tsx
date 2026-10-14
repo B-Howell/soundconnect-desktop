@@ -57,15 +57,17 @@ describe("update banner", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("announces an available update with Install now, Later and Release notes", async () => {
+  it("announces an available update with Install, Later and What's new", async () => {
     const user = userEvent.setup();
     const { update } = fakeUpdate();
     const store = createUpdaterStore(mockApi(update));
     renderHost(store);
     await act(() => store.getState().check());
     const banner = screen.getByRole("status");
-    expect(banner).toHaveTextContent("Version 0.1.10 is available");
-    await user.click(within(banner).getByRole("button", { name: "Release notes" }));
+    // One line, no sentence under it.
+    expect(banner).toHaveTextContent("Version 0.1.10 is available.");
+    expect(banner.querySelector(".alert-banner__message")).toBeNull();
+    await user.click(within(banner).getByRole("button", { name: "What's new" }));
     const sheet = await screen.findByRole("dialog", { name: "What's new in 0.1.10" });
     expect(sheet).toHaveTextContent("- Something new.");
     expect(sheet).toHaveTextContent("releases/tag/v0.1.10");
@@ -82,14 +84,13 @@ describe("update banner", () => {
     const store = createUpdaterStore(api);
     renderHost(store);
     await act(() => store.getState().check());
-    await user.click(screen.getByRole("button", { name: "Install now" }));
+    await user.click(screen.getByRole("button", { name: "Install" }));
     const banner = await screen.findByRole("status");
-    expect(banner).toHaveTextContent("Downloading version 0.1.10…");
-    expect(banner).toHaveTextContent("50% downloaded.");
+    expect(banner).toHaveTextContent("Downloading update… 50%");
     expect(within(banner).getByRole("progressbar", { name: "Download progress" })).toHaveAttribute("value", "0.5");
     await act(async () => release());
     await waitFor(() => expect(api.relaunch).toHaveBeenCalledOnce());
-    expect(screen.getByRole("status")).toHaveTextContent("Installing version 0.1.10…");
+    expect(screen.getByRole("status")).toHaveTextContent("Installing update…");
   });
 
   it("shows a failed signature check plainly and retries the same update", async () => {
@@ -98,20 +99,20 @@ describe("update banner", () => {
     const store = createUpdaterStore(mockApi(update));
     renderHost(store);
     await act(() => store.getState().check());
-    await user.click(screen.getByRole("button", { name: "Install now" }));
+    await user.click(screen.getByRole("button", { name: "Install" }));
     await act(async () => release());
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Update failed");
-    expect(alert).toHaveTextContent("did not match SoundConnect's signature");
+    expect(alert).toHaveTextContent("Signature check failed.");
     await user.click(within(alert).getByRole("button", { name: "Try again" }));
     expect(update.install).toHaveBeenCalledTimes(2);
   });
 
-  it("says plainly when GitHub cannot be reached", async () => {
+  it("says plainly when the update server cannot be reached", async () => {
     const store = createUpdaterStore(mockApi(new Error("error sending request for url (https://github.com/...)")));
     renderHost(store);
     await act(() => store.getState().check());
-    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach GitHub to check for updates.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Can't reach the update server.");
   });
 });
 
@@ -133,9 +134,9 @@ describe("a failed check after an update was found", () => {
 
 describe("update error text", () => {
   it("maps offline and signature failures, else passes the message on", () => {
-    expect(updateErrorText(new Error("Network error"))).toMatch(/Couldn't reach GitHub/);
-    expect(updateErrorText("InvalidSignature")).toMatch(/signature/);
-    expect(updateErrorText(new Error("disk full"))).toBe("The update failed: disk full");
+    expect(updateErrorText(new Error("Network error"))).toBe("Can't reach the update server.");
+    expect(updateErrorText("InvalidSignature")).toBe("Signature check failed.");
+    expect(updateErrorText(new Error("disk full"))).toBe("disk full");
   });
 });
 
@@ -152,7 +153,7 @@ describe("Settings update rows", () => {
     expect(screen.getByRole("switch", { name: "Check for updates automatically" })).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Check now" }));
     expect(api.check).toHaveBeenCalledOnce();
-    expect(await screen.findByText("You have the latest version.")).toBeInTheDocument();
+    expect(await screen.findByText("Up to date.")).toBeInTheDocument();
     await user.click(screen.getByRole("switch", { name: "Check for updates automatically" }));
     expect(useSettingsStore.getState().checkForUpdates).toBe(false);
   });

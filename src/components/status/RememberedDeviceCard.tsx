@@ -25,9 +25,8 @@ function primaryAction(view: ConnectionView): { label: string; enabled: boolean 
   switch (view.kind) {
     case "idle":
     case "offline":
-      return { label: "Connect", enabled: true };
     case "searching":
-      return { label: "Connect now", enabled: true };
+      return { label: "Connect", enabled: true };
     case "connecting":
       return { label: "Connecting…", enabled: false };
     case "error":
@@ -37,11 +36,12 @@ function primaryAction(view: ConnectionView): { label: string; enabled: boolean 
 
 /**
  * The Status page while remembered headphones are not connected: their
- * picture and name, a state line ("Off or out of range", "Connected to
- * Windows", "Connecting…", "Reconnecting to …", "Couldn't connect"), what to do, and Connect beside "Open Bluetooth
- * settings". Nothing connects until the user asks (unless auto-connect is
- * on). After Connect, focus moves to the name, because the pressed button
- * turns disabled while connecting.
+ * picture and name, one state line ("Headphones off or disconnected", "Ready
+ * to connect", "Connecting…", "Reconnecting…", "Connection failed"), the
+ * failure's reason only after a failed attempt, and Connect (Try again)
+ * beside "Bluetooth settings". Nothing connects until the user asks (unless
+ * auto-connect is on). After Connect, focus moves to the name, because the
+ * pressed button turns disabled while connecting.
  */
 export function RememberedDeviceCard({ name, modelName, view, onConnect, onOpenBluetoothSettings }: RememberedDeviceCardProps) {
   const { target, markAction } = useFocusAfterAction<HTMLHeadingElement>(view.kind);
@@ -59,7 +59,7 @@ export function RememberedDeviceCard({ name, modelName, view, onConnect, onOpenB
           <span className="remembered-device__state" data-tone={failed ? "warning" : undefined}>
             {connectionStateLabel(view)}
           </span>
-          <span className="remembered-device__advice">{description}</span>
+          {description ? <span className="remembered-device__advice">{description}</span> : null}
         </>
       }
     >
@@ -73,7 +73,7 @@ export function RememberedDeviceCard({ name, modelName, view, onConnect, onOpenB
         {primary.label}
       </SheetButton>
       <SheetButton variant="secondary" onPress={onOpenBluetoothSettings}>
-        Open Bluetooth settings
+        Bluetooth settings
       </SheetButton>
     </ConnectionState>
   );

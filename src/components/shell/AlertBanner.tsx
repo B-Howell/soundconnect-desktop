@@ -23,7 +23,7 @@ export function AlertBanner({ title, message, kind, onConfirm, onDecline }: Aler
         <div className="alert-banner__body">
           <div className="alert-banner__text">
             <p className="alert-banner__title">{title}</p>
-            <p className="alert-banner__message">{message}</p>
+            {message ? <p className="alert-banner__message">{message}</p> : null}
           </div>
           <div className="alert-banner__actions">
             {kind === "question" && onDecline ? (

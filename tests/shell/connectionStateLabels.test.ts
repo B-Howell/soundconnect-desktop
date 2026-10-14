@@ -16,32 +16,31 @@ const xm4: RememberedDevice = {
 const retry = () => {};
 const label = (status: EngineStatus) => connectionStateLabel(toConnectionView(status, retry, xm4));
 
-/** The five states the rail and the Status card show for remembered headphones (0.1.9). */
+/** The states the rail and the Status card show for remembered headphones: one line each (0.1.10 copy register). */
 describe("remembered headphones: the state follows Windows, not the last attempt", () => {
-  it("Off or out of range while Windows does not list them", () => {
-    expect(label({ state: "disconnected", windowsConnected: false })).toBe("Off or out of range");
+  it("Headphones off or disconnected while Windows does not list them", () => {
+    expect(label({ state: "disconnected", windowsConnected: false })).toBe("Headphones off or disconnected");
     // A link lost because they switched off is not a failed connect.
-    expect(label({ state: "disconnected", windowsConnected: false, lastError: "link lost" })).toBe("Off or out of range");
+    expect(label({ state: "disconnected", windowsConnected: false, lastError: "link lost" })).toBe("Headphones off or disconnected");
     // A Connect pressed while they are off.
     expect(
       label({ state: "disconnected", address: ADDRESS, reason: "notConnectedToWindows", lastError: "x", windowsConnected: false }),
-    ).toBe("Off or out of range");
+    ).toBe("Headphones off or disconnected");
     // Auto-connect is waiting for them.
-    expect(label({ state: "discovering", windowsConnected: false })).toBe("Off or out of range");
-    expect(connectionCopy(toConnectionView({ state: "disconnected", windowsConnected: false }, retry, xm4)).title).toBe(
-      "WH-1000XM4 is off or out of range",
-    );
+    expect(label({ state: "discovering", windowsConnected: false })).toBe("Headphones off or disconnected");
+    // One line: no helper sentence under it.
+    expect(connectionCopy(toConnectionView({ state: "disconnected", windowsConnected: false }, retry, xm4))).toEqual({
+      title: "Headphones off or disconnected",
+    });
   });
 
-  it("Connected to Windows while listed but not connected to the app", () => {
-    expect(label({ state: "disconnected", windowsConnected: true })).toBe("Connected to Windows");
-    expect(label({ state: "disconnected", windowsConnected: true, lastError: "link lost" })).toBe("Connected to Windows");
-    expect(connectionCopy(toConnectionView({ state: "disconnected", windowsConnected: true }, retry, xm4)).description).toBe(
-      "Select Connect to control them from SoundConnect.",
-    );
+  it("Ready to connect while listed but not connected to the app", () => {
+    expect(label({ state: "disconnected", windowsConnected: true })).toBe("Ready to connect");
+    expect(label({ state: "disconnected", windowsConnected: true, lastError: "link lost" })).toBe("Ready to connect");
+    expect(connectionCopy(toConnectionView({ state: "disconnected", windowsConnected: true }, retry, xm4)).description).toBeUndefined();
   });
 
-  it("Connecting… and Reconnecting to … during attempts", () => {
+  it("Connecting… and Reconnecting… during attempts", () => {
     expect(label({ state: "connecting", deviceName: "WH-1000XM4", windowsConnected: true })).toBe("Connecting…");
     expect(label({ state: "initialising", deviceName: "WH-1000XM4", windowsConnected: true })).toBe("Connecting…");
     expect(
@@ -51,23 +50,38 @@ describe("remembered headphones: the state follows Windows, not the last attempt
         reason: "reconnectingAfterSettingChange",
         windowsConnected: true,
       }),
-    ).toBe("Reconnecting to WH-1000XM4");
+    ).toBe("Reconnecting…");
   });
 
-  it("Couldn't connect only after an attempt failed while Windows listed them, with the reason", () => {
+  it("Connection failed only after an attempt failed while Windows listed them, with the reason", () => {
     for (const reason of ["busy", "timeout", "refused"] as const) {
       const view = toConnectionView(
         { state: "disconnected", address: ADDRESS, reason, lastError: "x", windowsConnected: true },
         retry,
         xm4,
       );
-      expect(connectionStateLabel(view)).toBe("Couldn't connect");
+      expect(connectionStateLabel(view)).toBe("Connection failed");
       expect(view.kind === "error" && view.reason).toBe(reason);
     }
+    const busy = toConnectionView(
+      { state: "disconnected", address: ADDRESS, reason: "busy", lastError: "x", windowsConnected: true },
+      retry,
+      xm4,
+    );
+    expect(connectionCopy(busy)).toEqual({ title: "Connection failed", description: "Another app is using the headphones." });
     // The same failure once Windows no longer lists them is the real state instead.
     expect(label({ state: "disconnected", reason: "timeout", lastError: "x", windowsConnected: false })).toBe(
-      "Off or out of range",
+      "Headphones off or disconnected",
     );
+  });
+
+  it("No headphones set up with nothing remembered", () => {
+    expect(connectionCopy(toConnectionView({ state: "disconnected" }, retry, null))).toEqual({ title: "No headphones set up" });
+    // Only an error message, nothing remembered: a failure (the tray's state_label agrees).
+    expect(connectionCopy(toConnectionView({ state: "disconnected", lastError: "x" }, retry, null))).toEqual({
+      title: "Connection failed",
+    });
+    expect(connectionCopy(toConnectionView({ state: "discovering" }, retry, null))).toEqual({ title: "No headphones set up" });
   });
 
   it("Connected when Ready", () => {

@@ -24,11 +24,10 @@ export function DoneStep({ index, count, modelName, firmware, onDone }: DoneStep
       index={index}
       count={count}
       visual={<DeviceImage model={modelName} size={SETUP_IMAGE_SIZE} />}
-      title="All set"
-      lead={`${modelName} is connected. SoundConnect remembers them for next time.`}
+      title="Setup complete"
       primary={<SheetButton onPress={onDone}>Done</SheetButton>}
     >
-      <GroupedList aria-label="Your headphones">
+      <GroupedList aria-label="Headphones">
         <ListRow title="Model" trailing={modelName} />
         {firmware ? <ListRow title="Firmware" trailing={firmware} /> : null}
       </GroupedList>

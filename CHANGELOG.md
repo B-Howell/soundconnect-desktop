@@ -5,6 +5,20 @@ workflow uses the section matching a tag (`## 0.1.9` for `v0.1.9`) as the
 "What's new" part of the GitHub Release notes (`tools/release-notes.ps1`)
 and as the in-app updater's release notes.
 
+## 0.1.10 - 2026-10-14
+
+- **Shorter, plainer wording everywhere**: each status is one line,
+  "Headphones off or disconnected", "Ready to connect", "Connecting…",
+  "Connected" or "No headphones set up", and only "Connection failed" adds
+  its reason ("Another app is using the headphones.", "Connection timed
+  out." or "Connection refused.") with Try again and Bluetooth settings. The
+  tray tooltip uses the same words.
+- The setup wizard, settings, Windows audio page, update banner (Install,
+  Later, What's new) and error messages lost their extra sentences; pairing
+  instructions are two short bullets.
+- The left rail shows the battery instead of "Connected" once the
+  headphones are connected.
+
 ## 0.1.9 - 2026-10-14
 
 - **Windows audio page redesigned**: a choice between **Stereo audio**

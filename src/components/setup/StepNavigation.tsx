@@ -13,7 +13,7 @@ export function StepNavigation({ onBack, onCancel }: StepNavigationProps) {
   return (
     <>
       {onBack ? <TextButton onPress={onBack}>Back</TextButton> : null}
-      {onCancel ? <TextButton onPress={onCancel}>Cancel setup</TextButton> : null}
+      {onCancel ? <TextButton onPress={onCancel}>Cancel</TextButton> : null}
     </>
   );
 }

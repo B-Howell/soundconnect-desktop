@@ -56,6 +56,12 @@
   width: 100%;
 }
 
+/* Content that is only a screen-reader live region (Choose before a scan)
+   takes no room: cancel the body's gap above it. */
+.setup-card__content:has(> .sr-only:only-child) {
+  margin-top: calc(-1 * var(--space-5));
+}
+
 /* A list inside the card (devices, the model and firmware) sits one step off
    the card's surface, as the pairing steps do, so it reads as a group. */
 .setup-card__content .card {

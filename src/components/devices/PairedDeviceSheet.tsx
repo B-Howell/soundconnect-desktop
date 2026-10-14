@@ -13,15 +13,13 @@ export interface PairedDeviceSheetProps {
 
 function statusLine(device: PairedDeviceView): string {
   if (device.maybeThisPc) {
-    return "Connected. This PC is one of the two connected devices, so disconnect from the device itself or from Windows.";
+    return "Connected. Disconnect on that device or in Bluetooth settings.";
   }
   if (device.thisPc) {
-    return device.playback
-      ? "This PC is connected and playing. Disconnect it from Windows Bluetooth settings."
-      : "This PC is connected. Disconnect it from Windows Bluetooth settings.";
+    return "This PC. Disconnect in Bluetooth settings.";
   }
-  if (!device.connected) return "Paired, not connected.";
-  return device.playback ? "Connected and playing." : "Connected.";
+  if (!device.connected) return "Not connected.";
+  return device.playback ? "Connected, playing." : "Connected.";
 }
 
 /**
@@ -80,7 +78,7 @@ export function PairedDeviceSheet({ device, onClose, onAction }: PairedDeviceShe
       message={
         shown
           ? confirmForget
-            ? "The headphones remove it from their list. Pair it again from that device to use it."
+            ? "Pair it again to use it."
             : statusLine(shown)
           : undefined
       }

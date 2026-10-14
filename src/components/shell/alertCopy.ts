@@ -2,6 +2,7 @@ import { CONFIRM_CONNECTION_MODE_CHANGE, type AlertEvent } from "../../lib/engin
 
 export interface AlertCopy {
   title: string;
+  /** One short line under the title; "" when the title says it all. */
   message: string;
 }
 
@@ -22,29 +23,28 @@ export function humanizeAlertKey(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** Friendly text for an `engine:alert`, for the banner. */
+/** The banner's words for an `engine:alert`: a title and at most one short line. */
 export function alertCopy(alert: AlertEvent): AlertCopy {
   const answered = alert.autoResponse !== null;
   if (alert.message === CONFIRM_CONNECTION_MODE_CHANGE) {
     return {
       title: "Change connection quality?",
-      message:
-        "Your headphones disconnect and reconnect to apply it, so audio stops for a few seconds. SoundConnect reconnects to them by itself.",
+      message: "Audio stops for a few seconds while the headphones reconnect.",
     };
   }
   if (alert.message.includes(CONNECTION_MODE_CHANGE)) {
     return answered
       ? {
           title: "Setting changed",
-          message: "Your headphones offered to reconnect for it; SoundConnect kept them connected.",
+          message: "",
         }
       : {
-          title: "Reconnect your headphones?",
-          message: "They may disconnect for a moment to apply this setting.",
+          title: "Reconnect headphones?",
+          message: "Audio stops for a few seconds.",
         };
   }
   const detail = humanizeAlertKey(alert.message);
   return answered
-    ? { title: "Your headphones sent a notice", message: `${detail}. SoundConnect answered it.` }
-    : { title: "Your headphones are asking", message: detail };
+    ? { title: "Headphones notice", message: detail }
+    : { title: "Headphones request", message: detail };
 }

@@ -5,23 +5,23 @@ import { ListRow } from "../primitives/ListRow";
 import { TextButton } from "../primitives/TextButton";
 import { ToggleRow } from "../primitives/ToggleRow";
 
-/** The line under "Check for updates" for each phase. */
+/** The line under "Check for updates" for each phase; "" before the first check. */
 export function updateStatusText(phase: UpdatePhase, version: string | undefined, error: string | null): string {
   switch (phase) {
     case "idle":
-      return "SoundConnect updates itself from its GitHub releases.";
+      return "";
     case "checking":
       return "Checking…";
     case "upToDate":
-      return "You have the latest version.";
+      return "Up to date.";
     case "available":
       return `Version ${version ?? ""} is available.`;
     case "downloading":
-      return `Downloading version ${version ?? ""}…`;
+      return "Downloading update…";
     case "installing":
-      return `Installing version ${version ?? ""}…`;
+      return "Installing update…";
     case "error":
-      return error ?? "The update failed.";
+      return error || "Update failed.";
   }
 }
 
@@ -41,17 +41,17 @@ export function UpdateRows({ store = useUpdaterStore }: { store?: UpdaterStore }
     <>
       <ToggleRow
         title="Check for updates automatically"
-        subtitle="Once a day when SoundConnect starts."
+        subtitle="Once a day at startup."
         checked={auto}
         onChange={setAuto}
       />
       <ListRow
         title="Check for updates"
-        subtitle={updateStatusText(phase, version, error)}
+        subtitle={updateStatusText(phase, version, error) || undefined}
         trailing={
           phase === "available" ? (
             <TextButton emphasized onPress={() => void store.getState().install()}>
-              Install now
+              Install
             </TextButton>
           ) : (
             <TextButton disabled={busy} onPress={() => void store.getState().check()}>

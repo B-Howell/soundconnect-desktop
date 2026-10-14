@@ -46,9 +46,10 @@ describe("rememberedTitle", () => {
 describe("remembered device titles on the connection screens and rail", () => {
   const retry = () => {};
 
-  it("names the idle, searching and error states by model, not address", () => {
+  it("names the idle, connecting and error states by model, not address", () => {
     expect(toConnectionView({ state: "disconnected" }, retry, stored013)).toEqual({ kind: "idle", deviceName: "WH-1000XM4" });
-    expect(toConnectionView({ state: "discovering" }, retry, stored013)).toEqual({ kind: "searching", deviceName: "WH-1000XM4" });
+    // Discovering while Windows lists the remembered headphones: the engine is reaching for them.
+    expect(toConnectionView({ state: "discovering" }, retry, stored013)).toEqual({ kind: "connecting", deviceName: "WH-1000XM4" });
     const failed = toConnectionView(
       { state: "disconnected", deviceName: ADDRESS, address: ADDRESS, lastError: "x", reason: "busy" },
       retry,

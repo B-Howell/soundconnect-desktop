@@ -15,12 +15,11 @@ export interface ConnectionConnectingProps {
 
 /** A device was found and the control channel is opening. */
 export function ConnectionConnecting({ deviceName, model, titleRef, reconnecting }: ConnectionConnectingProps) {
-  const { title, description } = connectionCopy({ kind: "connecting", deviceName, reconnecting });
+  const { title } = connectionCopy({ kind: "connecting", deviceName, reconnecting });
   return (
     <ConnectionState
       visual={<ActivityPulse image={<ConnectionDeviceImage model={model ?? deviceName} />} animated />}
       title={title}
-      description={description}
       titleRef={titleRef}
     />
   );

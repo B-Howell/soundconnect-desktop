@@ -10,37 +10,31 @@ export type UpdateBannerProps =
 
 /**
  * The update banner at the top of the content, styled like the headphones'
- * alert banner: "Version X is available" with Install now / Later / Release
- * notes, a progress bar while downloading, "Installing…" while the installer
- * runs, or the error in plain words with Try again. Non-blocking and
- * presentational; `UpdateBannerHost` feeds it from the updater store.
+ * alert banner: one line each ("Version X is available." with What's new /
+ * Later / Install, "Downloading update… 40%" over a progress bar,
+ * "Installing update…"), and only a failure adds its reason, with Try again.
+ * Non-blocking and presentational; `UpdateBannerHost` feeds it from the
+ * updater store.
  */
 export function UpdateBanner(props: UpdateBannerProps) {
   const title =
     props.state === "available"
-      ? `Version ${props.version} is available`
-      : props.state === "downloading"
-        ? `Downloading version ${props.version}…`
-        : props.state === "installing"
-          ? `Installing version ${props.version}…`
-          : "Update failed";
-  const message =
-    props.state === "available"
-      ? "Install it now; SoundConnect restarts by itself when it is done."
+      ? `Version ${props.version} is available.`
       : props.state === "downloading"
         ? props.progress === null
-          ? "Starting the download."
-          : `${Math.round(props.progress * 100)}% downloaded.`
+          ? "Downloading update…"
+          : `Downloading update… ${Math.round(props.progress * 100)}%`
         : props.state === "installing"
-          ? "SoundConnect closes and reopens in a moment."
-          : props.message;
+          ? "Installing update…"
+          : "Update failed";
+  const message = props.state === "error" ? props.message : "";
   return (
     <div className="alert-banner update-banner" role={props.state === "error" ? "alert" : "status"}>
       <Card inset>
         <div className="alert-banner__body">
           <div className="alert-banner__text">
             <p className="alert-banner__title">{title}</p>
-            <p className="alert-banner__message">{message}</p>
+            {message ? <p className="alert-banner__message">{message}</p> : null}
           </div>
           {props.state === "downloading" ? (
             <progress
@@ -53,13 +47,13 @@ export function UpdateBanner(props: UpdateBannerProps) {
           {props.state === "available" ? (
             <div className="alert-banner__actions">
               <button type="button" className="alert-banner__action" onClick={props.onNotes}>
-                Release notes
+                What&apos;s new
               </button>
               <button type="button" className="alert-banner__action" onClick={props.onLater}>
                 Later
               </button>
               <button type="button" className="alert-banner__action alert-banner__action--primary" onClick={props.onInstall}>
-                Install now
+                Install
               </button>
             </div>
           ) : null}

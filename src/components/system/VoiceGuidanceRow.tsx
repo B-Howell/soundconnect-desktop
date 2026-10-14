@@ -33,7 +33,6 @@ export function VoiceGuidanceRow({
     <>
       <ToggleRow
         title="Voice guidance"
-        subtitle="Spoken notices for power, battery and connection"
         checked={enabled}
         onChange={onEnabledChange}
         disabled={disabled}

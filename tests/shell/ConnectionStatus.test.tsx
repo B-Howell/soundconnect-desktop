@@ -19,7 +19,7 @@ describe("ConnectionStatus", () => {
     const user = userEvent.setup();
     render(<RetryHarness />);
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    const heading = screen.getByRole("heading", { name: "Connecting to WH-1000XM4" });
+    const heading = screen.getByRole("heading", { name: "Connecting…" });
     expect(heading).toHaveFocus();
     expect(document.body).not.toHaveFocus();
   });
@@ -27,7 +27,16 @@ describe("ConnectionStatus", () => {
   it("leaves focus alone when the state changes without a user action", () => {
     const { rerender } = render(<ConnectionStatus view={{ kind: "searching" }} />);
     rerender(<ConnectionStatus view={{ kind: "connecting", deviceName: "WH-1000XM4" }} />);
-    expect(screen.getByRole("heading", { name: "Connecting to WH-1000XM4" })).not.toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Connecting…" })).not.toHaveFocus();
+  });
+
+  it("offers Set up while no headphones are set up", async () => {
+    const user = userEvent.setup();
+    let opened = 0;
+    render(<ConnectionStatus view={{ kind: "searching" }} onSetUp={() => (opened += 1)} />);
+    expect(screen.getByRole("heading", { name: "No headphones set up" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Set up" }));
+    expect(opened).toBe(1);
   });
 
   it("shows the awaited device's own photo while searching, and the model prop over the Bluetooth name", () => {

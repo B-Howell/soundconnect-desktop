@@ -4,7 +4,7 @@
   gap: var(--space-4);
 }
 
-/* The <ol> keeps its list semantics; the numbers are drawn as discs instead of markers. */
+/* The <ul> keeps its list semantics; the bullets are drawn as accent dots instead of markers. */
 .pairing-steps__list {
   display: flex;
   flex-direction: column;
@@ -22,22 +22,17 @@
   gap: var(--space-3);
 }
 
-.pairing-steps__number {
+/* A 6px dot centred on the first line of its step. */
+.pairing-steps__bullet {
   flex: none;
-  display: grid;
-  place-items: center;
-  width: var(--row-icon-size);
-  height: var(--row-icon-size);
+  width: 6px;
+  height: 6px;
+  margin-top: calc((var(--font-size-md) * var(--leading-normal) - 6px) / 2);
   border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent-text);
-  font-size: var(--font-size-sm);
-  font-weight: var(--weight-semibold);
-  font-variant-numeric: tabular-nums;
+  background: var(--accent);
 }
 
 .pairing-steps__text {
-  padding-top: var(--space-half);
   font-size: var(--font-size-md);
   line-height: var(--leading-normal);
   color: var(--text);

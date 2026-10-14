@@ -52,15 +52,20 @@ describe("setup wizard", () => {
     // Pair with Windows: over-ear first; earbuds switch; the button opens Windows' page.
     await user.click(screen.getByRole("button", { name: "Get started" }));
     expect(screen.getByRole("heading", { level: 1, name: "Pair with Windows" })).toBeInTheDocument();
-    expect(screen.getByText(/hold the power button for about 7 seconds/i)).toBeInTheDocument();
+    // Two bullets per family, one short sentence each.
+    expect(screen.getByText("With the headphones off, hold the power button for 7 seconds.")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
+      "With the headphones off, hold the power button for 7 seconds.",
+      "In Bluetooth settings, select Add device, then the headphones.",
+    ]);
     await user.click(screen.getByRole("radio", { name: "Earbuds" }));
     expect(screen.getByText(/both touch sensors/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Open Windows Bluetooth settings" }));
+    await user.click(screen.getByRole("button", { name: "Bluetooth settings" }));
     expect(api.send).toHaveBeenLastCalledWith({ type: "openBluetoothSettings" });
 
     // Choose: Scan sends scan; the answer lists devices; a pick sends connect {address}.
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByRole("heading", { level: 1, name: "Choose your headphones" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Choose headphones" })).toBeInTheDocument();
     expect(sentTypes(api).some((c) => c.type === "scan" || c.type === "connect")).toBe(false);
     await user.click(screen.getByRole("button", { name: "Scan" }));
     expect(api.send).toHaveBeenLastCalledWith({ type: "scan" });
@@ -87,13 +92,13 @@ describe("setup wizard", () => {
     act(() => store.getState().receiveStatus({ state: "disconnected", address: "F8:4E:17:00:00:01", reason: "busy", remembered: null }));
     expect(screen.queryByRole("alert")).toBeNull();
 
-    // Ready with a snapshot: All set with model and firmware; Done opens the app on Status.
+    // Ready with a snapshot: Setup complete with model and firmware; Done opens the app on Status.
     act(() => {
       store.getState().receiveStatus({ state: "ready", deviceName: "WH-1000XM4", address: XM4, protocol: "V1" });
       store.getState().receiveSnapshot(xm4());
     });
-    expect(screen.getByRole("heading", { level: 1, name: "All set" })).toBeInTheDocument();
-    const details = screen.getByRole("list", { name: "Your headphones" });
+    expect(screen.getByRole("heading", { level: 1, name: "Setup complete" })).toBeInTheDocument();
+    const details = screen.getByRole("list", { name: "Headphones" });
     expect(details).toHaveTextContent("WH-1000XM4");
     expect(details).toHaveTextContent("2.9.0");
     expect(document.querySelector("img.device-image[data-model=\"WH-1000XM4\"]")).not.toBeNull();
@@ -104,16 +109,10 @@ describe("setup wizard", () => {
   });
 
   it.each<[ConnectFailureReason, string]>([
-    [
-      "notConnectedToWindows",
-      "They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again.",
-    ],
-    [
-      "busy",
-      "Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again.",
-    ],
-    ["timeout", "The headphones did not answer in time. Make sure they are switched on and nearby, then try again."],
-    ["refused", "The headphones refused the connection. Switch them off and on again, then try again."],
+    ["notConnectedToWindows", "Headphones off or disconnected."],
+    ["busy", "Another app is using the headphones."],
+    ["timeout", "Connection timed out."],
+    ["refused", "Connection refused."],
   ])("shows the %s failure and retries the same device", async (reason, text) => {
     const user = userEvent.setup();
     const { api, store } = firstRunStore();
@@ -137,7 +136,7 @@ describe("setup wizard", () => {
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Scan" }));
     await user.click(await screen.findByRole("button", { name: /WH-1000XM4/ }));
-    expect(await screen.findByRole("heading", { level: 1, name: "All set" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Setup complete" })).toBeInTheDocument();
     expect(store.getState().status.remembered?.address).toBe(XM4);
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(await screen.findByRole("meter", { name: "Battery" })).toBeInTheDocument();
@@ -148,7 +147,7 @@ describe("setup wizard", () => {
     const { store } = firstRunStore();
     renderWithStore(<AppRoot />, store);
     expect(screen.getByRole("heading", { level: 1, name: "Pair with Windows" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Cancel setup" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 
   it("shows nothing but the frame until the first status arrives", () => {

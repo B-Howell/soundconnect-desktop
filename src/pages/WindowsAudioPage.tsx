@@ -14,7 +14,7 @@ export function WindowsAudioPage() {
     return (
       <PlaceholderSection
         title="Windows audio"
-        message="Set up your headphones first; this page then shows how Windows handles their sound."
+        message="Set up headphones to change these settings."
       />
     );
   }

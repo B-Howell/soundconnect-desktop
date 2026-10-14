@@ -96,18 +96,18 @@ export function modeDrift(s: WinAudioSnapshot, mode: FixKind = audioMode(s)): st
   if (mode === "stereo") {
     const stereo = s.stereo;
     if (stereo?.state === "active") {
-      if (!sameId(s.defaultRender?.id, stereo.id)) drift.push("The headphones are not the default playback device.");
+      if (!sameId(s.defaultRender?.id, stereo.id)) drift.push("The headphones aren't the default playback device.");
       if (!sameId(s.defaultCommunicationsRender?.id, stereo.id)) {
-        drift.push("Voice chat and calls do not play on the headphones' stereo output.");
+        drift.push("Calls don't play on the headphones' stereo output.");
       }
     }
     if (s.defaultCapture?.isThisDevice || s.defaultCommunicationsCapture?.isThisDevice) {
-      drift.push("The headphone mic is a default microphone, which switches the sound to mono.");
+      drift.push("The headphone mic is a default microphone (forces mono).");
     }
   } else if (s.handsFreeRender && s.handsFreeCapture) {
     const render = sameId(s.defaultCommunicationsRender?.id, s.handsFreeRender.id);
     const capture = sameId(s.defaultCommunicationsCapture?.id, s.handsFreeCapture.id);
-    if (!(render && capture)) drift.push("Voice chat does not use the headphones' hands-free audio and mic.");
+    if (!(render && capture)) drift.push("Voice chat doesn't use the headphone mic.");
   }
   return drift;
 }
@@ -121,7 +121,7 @@ function processingCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "enhancements",
         title: "Audio enhancements",
-        description: "Windows effects added before the sound reaches the headphones. Off lets Sony's EQ and DSEE work on the original.",
+        description: "Windows effects on top of Sony's EQ and DSEE.",
         current: onOff(s.enhancementsEnabled),
         recommended: "Off",
         ok: s.enhancementsEnabled == null ? null : !s.enhancementsEnabled,
@@ -139,7 +139,7 @@ function processingCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "spatial",
         title: "Spatial sound",
-        description: "Virtual surround on top of the game's own mix. Only Windows Settings can change it.",
+        description: "Virtual surround, set in Windows Settings.",
         current: s.spatialSound === "on" ? "On" : s.spatialSound === "off" ? "Off" : "Unknown",
         recommended: "Off",
         ok: s.spatialSound === "on" ? false : s.spatialSound === "off" ? true : null,
@@ -150,7 +150,7 @@ function processingCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "monoMix",
         title: "Mono mix (accessibility)",
-        description: "Plays the same sound in both ears, for listening with one ear. Not the same as the mono-with-mic mode.",
+        description: "Same sound in both ears, for one-ear listening.",
         current: onOff(s.monoAudio),
         recommended: "Off",
         ok: !s.monoAudio,
@@ -174,7 +174,7 @@ function formatCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "format",
         title: "Default format",
-        description: "The rate Windows mixes everything to. 48 kHz suits games and video.",
+        description: "The rate Windows mixes all audio to.",
         current: format ? `${khz(format.sampleRate)}, ${format.bitsPerSample}-bit` : "Unknown",
         recommended: "48 kHz",
         ok: format ? format.sampleRate === 48_000 : null,
@@ -198,7 +198,7 @@ function formatCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "exclusive",
         title: "Exclusive mode",
-        description: "Lets one app take the headphones for itself. Little gain over Bluetooth.",
+        description: "Lets one app take over the headphones.",
         current: EXCLUSIVE_OPTIONS.find((o) => o.value === exclusive)?.label ?? "Unknown",
         recommended: "Allowed, with priority",
         ok: s.exclusiveModeAllowed == null ? null : exclusive === "priority",
@@ -221,7 +221,7 @@ function formatCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "ducking",
         title: "Lower other sounds during calls",
-        description: "Windows turns the game or music down when a voice app starts. \"Do nothing\" keeps your volume.",
+        description: "Turns other audio down when a voice app starts.",
         current: ducking,
         recommended: "Do nothing",
         ok: s.duckingMode === "doNothing",
@@ -237,7 +237,7 @@ function formatCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "absoluteVolume",
         title: "Absolute volume",
-        description: "One volume for Windows and the headphones. Applies after the headphones reconnect.",
+        description: "One volume for Windows and the headphones; applies after reconnecting.",
         current: onOff(!s.absoluteVolumeDisabled),
         recommended: "On",
         ok: !s.absoluteVolumeDisabled,
@@ -262,7 +262,7 @@ function connectionCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "codec",
         title: "Codec reported by headphones",
-        description: "Windows sends SBC or AAC; LDAC needs other drivers.",
+        description: "Windows sends SBC or AAC.",
         current: s.codec ?? "Unknown",
         recommended: null,
         ok: null,
@@ -273,7 +273,7 @@ function connectionCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "powerSaving",
         title: "Adapter power saving",
-        description: `Lets Windows turn off ${adapter?.name ?? "the Bluetooth adapter"} to save power. Can cause slow reconnects or dropouts.`,
+        description: "Can cause dropouts and slow reconnects.",
         current: onOff(adapter?.powerSavingAllowed),
         recommended: "Off",
         ok: adapter?.powerSavingAllowed == null ? null : !adapter.powerSavingAllowed,
@@ -291,7 +291,7 @@ function connectionCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "service",
         title: "Bluetooth service",
-        description: "The Windows service Bluetooth needs. Windows starts it when needed.",
+        description: "Required for Bluetooth.",
         current: s.bluetoothServiceRunning == null ? "Unknown" : s.bluetoothServiceRunning ? "Running" : "Stopped",
         recommended: "Running",
         ok: s.bluetoothServiceRunning,
@@ -302,7 +302,7 @@ function connectionCard(s: WinAudioSnapshot): SettingCard {
       {
         id: "wifi",
         title: "2.4 GHz Wi-Fi",
-        description: "Shares the air with Bluetooth. Use 5 GHz Wi-Fi or Ethernet if the sound stutters.",
+        description: "Can interfere with Bluetooth audio.",
         current: s.wifi24Active == null ? "Unknown" : s.wifi24Active ? "In use" : "Not in use",
         recommended: "Not in use",
         ok: s.wifi24Active == null ? null : !s.wifi24Active,

@@ -38,7 +38,7 @@ export function SpeakToChatCard({
     <GroupedList aria-label="Speak-to-Chat">
       <ToggleRow
         title="Speak-to-Chat"
-        subtitle="Start talking to pause music and let voices in"
+        subtitle="Pauses music when you talk"
         checked={enabled}
         onChange={onEnabledChange}
         disabled={disabled}

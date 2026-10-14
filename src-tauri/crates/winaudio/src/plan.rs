@@ -9,19 +9,19 @@ use crate::model::{
 
 /// Shown when spatial sound reads as on; Windows has no supported setter.
 pub const NOTE_SPATIAL: &str =
-    "Spatial sound is on. Turn it off in Windows Settings > Sound > the headphones.";
+    "Spatial sound is on. Turn it off in Windows Settings.";
 /// Shown with "Mono audio with mic".
 pub const NOTE_CALLS_MONO: &str =
-    "All sound will be mono, call quality, while an app uses the headphone mic.";
+    "Sound is mono while an app uses the mic.";
 /// Shown when Hands-Free is needed but the headphones do not offer it.
 pub const NOTE_NO_HANDS_FREE: &str =
-    "These headphones do not offer Hands-Free to this PC, so their mic cannot be used for calls.";
+    "These headphones don't offer a mic to this PC.";
 /// Shown when stereo mode has to move the mic off the headphones but no other mic exists.
 pub const NOTE_NO_OTHER_MIC: &str =
-    "No other microphone was found. Calls will have no microphone while Hands-Free is off.";
+    "No other microphone found. Calls will have no mic.";
 /// Shown when the stereo endpoint is not active, so defaults cannot point at it.
 pub const NOTE_NOT_CONNECTED: &str =
-    "The headphones are not connected to Windows, so they cannot be made the default device now.";
+    "Headphones off or disconnected. Default devices can't change now.";
 
 fn needs_default(current: Option<&DefaultEndpoint>, id: &str) -> bool {
     current.is_none_or(|d| !d.id.eq_ignore_ascii_case(id))

@@ -34,7 +34,7 @@ export interface SystemProps {
  * (`useAssignableControlsProps`).
  */
 export function toSystemProps(snapshot: Snapshot, send: (command: EngineCommand) => void): SystemProps {
-  const deviceName = snapshot.texts.modelName ?? "your headphones";
+  const deviceName = snapshot.texts.modelName ?? "Headphones";
   const settings = hasFeature(snapshot, "GENERAL_SETTINGS") ? (snapshot.generalSettings ?? []) : [];
   const voice = hasFeature(snapshot, "VOICE_GUIDANCE") ? snapshot.voiceGuidance : null;
   const power = hasFeature(snapshot, "AUTO_POWER_OFF") ? snapshot.power : null;

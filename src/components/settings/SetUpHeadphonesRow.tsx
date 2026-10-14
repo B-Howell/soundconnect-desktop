@@ -12,7 +12,6 @@ export function SetUpHeadphonesRow({ onPress }: SetUpHeadphonesRowProps) {
     <ListRow
       leading={<Icon name="plus" />}
       title="Set up new headphones"
-      subtitle="Pair and connect another pair, as on first use."
       disclosure
       onPress={onPress}
     />

@@ -310,7 +310,7 @@ export function createEngineStore(
           scanTimer = undefined;
           const current = get().scan;
           if (current.phase === "scanning") {
-            set({ scan: { phase: "failed", devices: current.devices, message: "The scan got no answer." } });
+            set({ scan: { phase: "failed", devices: current.devices, message: "No response." } });
           }
         }, scanTimeoutMs);
         try {

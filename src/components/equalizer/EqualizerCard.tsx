@@ -77,7 +77,7 @@ export function EqualizerCard({
         </ul>
       ) : null}
       {!available ? (
-        <p className="equalizer-card__note">Unavailable while a listening mode other than Standard is active.</p>
+        <p className="equalizer-card__note">Unavailable in this listening mode.</p>
       ) : null}
       {bands.length > 0 && !range ? (
         <p className="equalizer-card__note">Band editing is not available for {bands.length} bands.</p>

@@ -1174,7 +1174,8 @@ asked for leave focus alone. Test:
 alert node is empty until an error, then holds the title but not the
 buttons, and the status empties; after Try again focus is on the
 "Connecting to ..." heading, not body; a change without an action does not
-move focus).
+move focus). The announcer speaks "Connecting…", "Connection failed.
+{reason}" and "Connected." (0.1.10 copy register).
 
 [ConnectionState.tsx](<../../src/components/shell/ConnectionState.tsx>) /
 [ConnectionState.css](<../../src/components/shell/ConnectionState.css>) is
@@ -1196,16 +1197,16 @@ was kept.
   with no disc. When animated, two rings breathe out of it, half a `--duration-pulse` (1.8 s)
   apart. Under reduced motion the rings are not drawn at all.
 - [ConnectionSearching.tsx](<../../src/components/shell/ConnectionSearching.tsx>):
-  `model?`, `titleRef?`; "Looking for your headphones", "Connect them to Windows
-  Bluetooth first.", the device's product photo (the neutral WH-1000XM5
-  without a model) with breathing rings.
+  `model?`, `titleRef?`, `onSetUp?`; nothing remembered: "No headphones set
+  up" and a "Set up" button that opens the wizard (`StatusPage` passes
+  `openSetup`), over the neutral product photo (0.1.10; it was "Looking for
+  your headphones" with a helper sentence).
 - [ConnectionConnecting.tsx](<../../src/components/shell/ConnectionConnecting.tsx>):
-  `deviceName`, `model?`, `titleRef?`, `reconnecting?`; "Connecting to {name}", "This
-  usually takes a few seconds.", the device's product photo with breathing
-  rings. With `reconnecting` (the engine status `connecting` with reason
+  `deviceName`, `model?`, `titleRef?`, `reconnecting?`; "Connecting…", one
+  line, over the device's product photo with breathing rings. With
+  `reconnecting` (the engine status `connecting` with reason
   `reconnectingAfterSettingChange`, mapped by `toConnectionView`):
-  "Reconnecting to {name}", "They restarted their Bluetooth connection to
-  apply your setting. This takes a few seconds." The headphones drop the link
+  "Reconnecting…". The headphones drop the link
   to apply a connection-quality change and the engine reconnects by itself
   ([toggle-dropouts-debug.md](<../core/evidence/toggle-dropouts-debug.md>)).
   `failureReasonOf` in
@@ -1214,15 +1215,16 @@ was kept.
   [settingChangeReconnect.test.tsx](<../../tests/shell/settingChangeReconnect.test.tsx>).
 - [ConnectionError.tsx](<../../src/components/shell/ConnectionError.tsx>) /
   [ConnectionError.css](<../../src/components/shell/ConnectionError.css>):
-  `deviceName?`, `model?`, `message`, `onRetry`, `titleRef?`. Friendly title
-  ("Couldn't connect to {name}" or "to your headphones") and advice, a
-  primary "Try again" `SheetButton`, and the raw `message` in a selectable
-  monospace block (`--font-mono`) under a collapsed "Details" `Disclosure`;
-  the device's product photo, static. Test:
-  [ConnectionError.test.tsx](<../../tests/shell/ConnectionError.test.tsx>)
-  (friendly text visible, raw message hidden until Details opens and hidden
-  again when it closes; generic title without a name; Try again fires
-  `onRetry` once).
+  `deviceName?`, `model?`, `message`, `onRetry`, `onOpenBluetoothSettings?`,
+  `titleRef?`. "Connection failed", the reason line from `failureText` only
+  when the engine gave a reason, a primary "Try again" and (with the handler)
+  a secondary "Bluetooth settings" `SheetButton`, and the raw `message` in a
+  selectable monospace block (`--font-mono`) under a collapsed "Details"
+  `Disclosure` (left out when empty); the device's product photo, static.
+  Test: [ConnectionError.test.tsx](<../../tests/shell/ConnectionError.test.tsx>)
+  (the title alone without a reason, raw message hidden until Details opens
+  and hidden again when it closes; Bluetooth settings fires its handler; Try
+  again fires `onRetry` once).
 
 The three cards are presentational and usable alone (the gallery shows
 each); anything that changes state at runtime should go through
@@ -2576,9 +2578,10 @@ a live element: reading the step from the store there made both layers show
 the new step (a test caught it). Navigation is
 [useSetupWizard](<../../src/hooks/setup/useSetupWizard.ts>): `next` and
 `back` read the current step when called, a successful connect on "Choose"
-moves to "All set" by itself, going back or cancelling clears a settled
-attempt, and `finish` sets `onboardingDone`, closes the wizard and opens
-Status. "Cancel setup" is offered only while headphones are remembered.
+moves to "Setup complete" by itself, going back or cancelling clears a
+settled attempt, and `finish` sets `onboardingDone`, closes the wizard and
+opens Status. "Cancel" is offered only while headphones are remembered.
+Every step's words follow the [Copy register](#copy-register).
 
 - [SetupCard.tsx](<../../src/components/setup/SetupCard.tsx>) /
   [SetupCard.css](<../../src/components/setup/SetupCard.css>): one centred
@@ -2592,23 +2595,25 @@ Status. "Cancel setup" is offered only while headphones are remembered.
   dots, the current one a 24 px accent pill, finished ones the accent at
   45 %; decorative, with "Step 2 of 4" as hidden text.
 - [StepNavigation.tsx](<../../src/components/setup/StepNavigation.tsx>):
-  Back and "Cancel setup" as the new
+  Back and "Cancel" as the new
   [TextButton](<../../src/components/primitives/TextButton.tsx>) primitive
   ([TextButton.css](<../../src/components/primitives/TextButton.css>)).
 - [WelcomeStep.tsx](<../../src/components/setup/WelcomeStep.tsx>) /
   [WelcomeStep.css](<../../src/components/setup/WelcomeStep.css>): the app
-  icon, what the app does, and the Sony disclaimer (`SONY_DISCLAIMER` from
-  About); "Get started".
+  icon, "Control Sony headphones from your PC.", and the Sony disclaimer
+  (`SONY_DISCLAIMER` from About); "Get started".
 - [PairStep.tsx](<../../src/components/setup/PairStep.tsx>) with
   [PairingSteps.tsx](<../../src/components/setup/PairingSteps.tsx>) /
   [PairingSteps.css](<../../src/components/setup/PairingSteps.css>): an
   Over-ear / Earbuds segmented choice (default from the remembered model,
   [usePairingFamily](<../../src/hooks/setup/usePairingFamily.ts>)) and its
-  numbered steps from
+  two steps as bullets (accent dots, `ul`) from
   [pairingInstructions.ts](<../../src/lib/devices/pairingInstructions.ts>):
-  over-ear, hold the power button about 7 s until "Bluetooth pairing";
-  earbuds, both touch sensors about 5 s; then add the device in Windows. The
-  app cannot pair, so "Open Windows Bluetooth settings" sends
+  over-ear, "With the headphones off, hold the power button for 7 seconds.";
+  earbuds, "With both earbuds in, hold both touch sensors for 5 seconds.";
+  then "In Bluetooth settings, select Add device, then the headphones." The
+  lead is "Already paired? Select Continue." The app cannot pair, so
+  "Bluetooth settings" sends
   `openBluetoothSettings`
   ([useOpenBluetoothSettings](<../../src/hooks/setup/useOpenBluetoothSettings.ts>)).
   `familyForModel` there (`WH-` over-ear, `WF-` and `LinkBuds` earbuds) is
@@ -2616,8 +2621,11 @@ Status. "Cancel setup" is offered only while headphones are remembered.
 - [ChooseStep.tsx](<../../src/components/setup/ChooseStep.tsx>) /
   [ChooseStep.css](<../../src/components/setup/ChooseStep.css>): Scan sends
   `scan` ([useDeviceScan](<../../src/hooks/setup/useDeviceScan.ts>)); a
-  polite status line says what is happening (the idle hint, "Looking for
-  Bluetooth devices…", nothing found, the scan failed, or "2 devices found").
+  polite status line shows only a result ("No Bluetooth devices found.",
+  "Scan failed.", or a hidden "2 devices found."); before the first scan and
+  while scanning the button alone says it ("Scan", "Scanning…"). The hidden
+  live region alone takes no room: `SetupCard.css` cancels the gap above
+  content that is only an `.sr-only` element.
   [DeviceChoiceList.tsx](<../../src/components/setup/DeviceChoiceList.tsx>)
   ([DeviceChoiceList.css](<../../src/components/setup/DeviceChoiceList.css>))
   lists the answer through
@@ -2636,16 +2644,13 @@ Status. "Cancel setup" is offered only while headphones are remembered.
   `notConnectedToWindows` and "nothing found" also offer the Bluetooth
   settings button.
 - [DoneStep.tsx](<../../src/components/setup/DoneStep.tsx>): the image
-  agent's `DeviceImage` (160 px), "All set", model and firmware rows (from
-  the snapshot, else the remembered profile), Done.
+  agent's `DeviceImage` (160 px), "Setup complete", model and firmware rows
+  (from the snapshot, else the remembered profile), Done.
 
-Failure texts: `notConnectedToWindows` "Windows is not connected to these
-headphones yet. Connect them in Bluetooth settings, then try again."; `busy`
-"Another app is controlling the headphones (for example the Sony app on your
-phone). Close it and try again."; `timeout` "The headphones did not answer in
-time. Make sure they are switched on and nearby, then try again."; `refused`
-"The headphones refused the connection. Switch them off and on again, then
-try again."
+Failure texts (0.1.10), one line each with no advice: `notConnectedToWindows`
+"Headphones off or disconnected."; `busy` "Another app is using the
+headphones."; `timeout` "Connection timed out."; `refused` "Connection
+refused."; no reason: "" (the title or "Connection failed." stands alone).
 
 ### Store: scan and connect attempts
 
@@ -2720,11 +2725,10 @@ the wizard, and nothing is scanned or connected.
 [RememberedDeviceCard.tsx](<../../src/components/status/RememberedDeviceCard.tsx>)
 ([RememberedDeviceCard.css](<../../src/components/status/RememberedDeviceCard.css>))
 while not connected: the shared `ConnectionState` layout with the product
-image (160 px), the name, a state line with a dot ("Not connected",
-"Connecting…", or "Couldn't connect" in amber), the advice sentence, a
-primary button (Connect; "Connect now" while the engine searches with
-auto-connect on; a disabled "Connecting…"; or Try again) sending
-`connect {address}`, and "Open Bluetooth settings". After Connect, focus
+image (160 px), the name, one state line with a dot (see the table below;
+"Connection failed" in amber, with the reason as the only second line), a
+primary button (Connect; a disabled "Connecting…"; or Try again) sending
+`connect {address}`, and "Bluetooth settings". After Connect, focus
 moves to the name, because the pressed button turns disabled
 (`useFocusAfterAction`). Without anything remembered the old
 `ConnectionStatus` cards remain.
@@ -2749,7 +2753,7 @@ and `reason` on `error` (the advice comes from `failureText`).
 `connectionStateLabel(view)` is shared by the card and the rail.
 [useConnectionView](<../../src/hooks/engine/useConnectionView.ts>) maps
 `disconnected` with `reason` or `lastError` to error, `disconnected` with a
-remembered device to idle, `discovering` to searching (named), and Try again
+remembered device to idle, `discovering` to searching (named; since 0.1.10 a listed remembered device maps to connecting and the words are the [Copy register](#copy-register)), and Try again
 now connects to the failed or remembered address (`reconnect` only when
 neither is known). [useRailDeviceProps](<../../src/hooks/engine/useRailDeviceProps.ts>)
 shows the remembered name with "Not connected" or "Connecting…" (the image
@@ -2773,25 +2777,29 @@ remembered headphones onto five states, shown by the rail and the Status
 card through `connectionStateLabel` in
 [connectionCopy.ts](<../../src/components/shell/connectionCopy.ts>):
 
-| State line | When | Card advice |
+| State line (0.1.10) | When | Second line |
 |---|---|---|
-| Off or out of range (`offline`) | `windowsConnected` false, including a `notConnectedToWindows` failure, a link lost because they switched off, and auto-connect waiting (`discovering`) | "{name} is off or out of range": switch them on, SoundConnect notices within seconds |
-| Connected to Windows (`idle`) | listed, not connected to the app (auto-connect off, or a link lost while still listed) | Connect is the call to action |
-| Connecting… / Reconnecting to {name} | `connecting`, `initialising`, `ready` before the snapshot; the second with `reconnectingAfterSettingChange` | |
-| Couldn't connect (`error`) | only `busy`, `timeout` or `refused` while listed; the reason's sentence (`failureText`) underneath, Try again | |
-| Connected | Ready with a snapshot | |
+| Headphones off or disconnected (`offline`) | `windowsConnected` false, including a `notConnectedToWindows` failure, a link lost because they switched off, and auto-connect waiting (`discovering`) | none |
+| Ready to connect (`idle`) | listed, not connected to the app (auto-connect off, or a link lost while still listed) | none; Connect is the call to action |
+| Connecting… / Reconnecting… | `connecting`, `initialising`, `ready` before the snapshot, and `discovering` while Windows lists them; the second with `reconnectingAfterSettingChange` | none |
+| Connection failed (`error`) | only `busy`, `timeout` or `refused` while listed | the reason (`failureText`); Try again, Bluetooth settings |
+| Connected | Ready with a snapshot; the rail shows the battery chip instead of the line | none |
+| No headphones set up (`searching`) | nothing remembered | none; Set up |
 
 A failure clears as soon as Windows' state changes, because the engine drops
 `reason` / `lastError` then. A status without `windowsConnected` (an older
 engine) is treated as listed. With nothing remembered, failures still show as
 errors (the setup wizard's own mapping). The wizard's `notConnectedToWindows`
-sentence ([connectFailureText.ts](<../../src/lib/devices/connectFailureText.ts>))
-now reads "They are off, out of range, or not connected to Windows. Switch
-them on and connect them in Bluetooth settings, then try again." The mock
+line ([connectFailureText.ts](<../../src/lib/devices/connectFailureText.ts>))
+reads "Headphones off or disconnected." (0.1.10). The mock
 engine ([mockApi.ts](<../../src/lib/engine/mockApi.ts>)) reports
 `windowsConnected: true` except on its `notConnectedToWindows` failure.
 `RememberedDeviceCard` and `ConnectionStatus` treat `offline` like `idle`
-(Connect, plain card). The tray tooltip still says "Not connected" for both.
+(Connect, plain card). Since 0.1.10 the tray tooltip and its idle menu line
+use the same words (`state_label` in
+[tray.rs](<../../src-tauri/src/tray.rs>), mirroring `connectionCopy`):
+"SoundConnect · Ready to connect" and so on, and "{model} · 90% · {noise}"
+when Ready.
 
 Tests: [connectionStateLabels.test.ts](<../../tests/shell/connectionStateLabels.test.ts>)
 (the five texts and when each applies, including a timeout that turns into
@@ -2880,10 +2888,11 @@ The renderer side of in-app updates ([Core Services, Updates](<../core/SoundConn
 - [UpdateBanner](<../../src/components/updates/UpdateBanner.tsx>)
   ([UpdateBanner.css](<../../src/components/updates/UpdateBanner.css>), the
   progress bar; the rest reuses `AlertBanner.css` so it reads as the same
-  banner): "Version X is available" with Release notes / Later / Install now;
-  "Downloading version X…" with a percentage and a `progress` bar;
-  "Installing version X…"; "Update failed" with the sentence, Dismiss and Try
-  again (an alert). Fed by
+  banner): one line each since 0.1.10, "Version X is available." with
+  What's new / Later / Install; "Downloading update… 40%" over a `progress`
+  bar; "Installing update…"; only "Update failed" adds a second line (the
+  reason: "Signature check failed.", "Can't reach the update server.", else
+  the plugin's message) with Dismiss and Try again (an alert). Fed by
   [useUpdateBannerProps](<../../src/hooks/updates/useUpdateBannerProps.ts>)
   inside [UpdateBannerHost](<../../src/components/updates/UpdateBannerHost.tsx>),
   which also owns [UpdateNotesSheet](<../../src/components/updates/UpdateNotesSheet.tsx>)
@@ -2893,7 +2902,8 @@ The renderer side of in-app updates ([Core Services, Updates](<../core/SoundConn
 - Settings gains an "Updates" section above About
   ([UpdateRows.tsx](<../../src/components/settings/UpdateRows.tsx>)):
   "Check for updates automatically" and "Check for updates" with the state
-  line and Check now (Install now once one is found).
+  line ("Checking…", "Up to date.", none before the first check) and Check
+  now (Install once one is found).
 
 Tests: [UpdateBanner.test.tsx](<../../tests/updates/UpdateBanner.test.tsx>)
 (no banner when up to date; available with the notes sheet and Later; the
@@ -3068,3 +3078,157 @@ the status line sit on the cards' 16 px text edge; values and controls align
 on the right; "Recommended" shows only on adapter power saving (the
 recording's one difference). Not verified: the page inside the real Tauri
 window against live Windows.
+
+## Copy register
+
+0.1.10 rewrote every user-facing string after the maintainer called the old
+status copy ("Off or out of range / Switch them on and keep them nearby.
+SoundConnect notices within a few seconds once Windows connects to them.")
+verbose and unprofessional. The register is Windows Settings and Sony's
+app: short, neutral, factual. New strings must keep it.
+
+Rules:
+
+1. **One line per status.** A state is one short line everywhere it shows
+   (Status card, rail, tray tooltip, tray menu, wizard, banners,
+   placeholders). No helper line under it, no advice, no reassurance.
+2. **Only an actual error gets a second line**: its reason, one short
+   sentence ("Another app is using the headphones."). The buttons are the
+   advice (Try again, Bluetooth settings); the text never says "try again".
+3. **No app name in sentences.** "SoundConnect" appears only as the wordmark,
+   the welcome title, "Show SoundConnect" in the tray menu, the tray tooltip
+   prefix and About. Say "the headphones" or nothing, never "your
+   headphones".
+4. **No second-person reassurance** ("This usually takes a few seconds",
+   "SoundConnect reconnects to them by itself", "You have the latest
+   version").
+5. **Setting rows**: a title and at most one short sentence, and only when it
+   changes what the user does (a consequence such as "Can cause dropouts and
+   slow reconnects." or "applies after reconnecting"). Otherwise no subtitle.
+   The Windows audio rows are the exception the maintainer asked for: each
+   names what the Windows setting is, in one short sentence, because the
+   titles are Windows' own jargon.
+6. **Wizard**: titles of at most four words, at most two short sentences of
+   body, pairing instructions as two bullets.
+7. **Sentence case** for titles and buttons; buttons are one or two words
+   ("Set up", "Connect", "Install", "Bluetooth settings").
+8. Engine and Windows error details stay raw and show only under "Details"
+   or as an error's reason line.
+
+The connection states, in
+[connectionCopy.ts](<../../src/components/shell/connectionCopy.ts>) and
+mirrored by `state_label` in [tray.rs](<../../src-tauri/src/tray.rs>) (which
+takes the same inputs as `toConnectionView`: state, remembered,
+`windowsConnected`, `reason` and whether `lastError` is set, so the tray and
+the window never disagree; Ready is "Connected" on the tray menu's idle
+line):
+
+| State | Line | Second line | Buttons |
+|---|---|---|---|
+| Nothing remembered | No headphones set up | none | Set up |
+| Remembered, Windows does not list them | Headphones off or disconnected | none | Connect, Bluetooth settings |
+| Remembered, listed, app idle | Ready to connect | none | Connect, Bluetooth settings |
+| Connecting / after a setting change | Connecting… / Reconnecting… | none | (disabled Connecting…) |
+| Failed after a real attempt | Connection failed | Another app is using the headphones. / Connection timed out. / Connection refused. | Try again, Bluetooth settings |
+| Connected | Connected (the rail shows the battery chip instead) | none | |
+
+Screenshots of the Status card with the mock engine (headless Edge over CDP,
+1100 x 720, dark):
+![Ready to connect](<screenshots/task32-status-ready.png>),
+![Headphones off or disconnected](<screenshots/task32-status-off.png>),
+![Connection failed, busy](<screenshots/task32-status-failed.png>).
+Judged: one state line under the name, the failure's reason as the only
+second line, buttons equal width; the rail's two-line "Headphones off or
+disconnected" wraps balanced with its dot on the first line
+([RailDevice.css](<../../src/components/frame/RailDevice.css>)), and the
+rail's device card and navigation never shrink under it (`flex: none` in
+[NavRail.css](<../../src/components/frame/NavRail.css>)). The wizard's Pair
+step (bullets) and Choose step (no empty gap before the first scan) were
+looked at the same way.
+
+Every string changed in 0.1.10 (before → after):
+
+| Where | Before | After |
+|---|---|---|
+| Status, nothing remembered | Looking for your headphones / Connect them to Windows Bluetooth first. | No headphones set up (button Set up) |
+| Status, engine searching for a listed remembered device | Looking for {name} / SoundConnect connects as soon as Windows is connected to them. | Connecting… |
+| Status, Windows does not list them | {name} is off or out of range / Switch them on and keep them nearby. SoundConnect notices within a few seconds once Windows connects to them. | Headphones off or disconnected |
+| Rail / card state, off | Off or out of range | Headphones off or disconnected |
+| Status, listed and idle | {name} is connected to Windows / Select Connect to control them from SoundConnect. | Ready to connect |
+| Rail / card state, idle | Connected to Windows | Ready to connect |
+| Connecting | Connecting to {name} / This usually takes a few seconds. | Connecting… |
+| Reconnecting | Reconnecting to {name} / They restarted their Bluetooth connection to apply your setting. This takes a few seconds. | Reconnecting… |
+| Failure title and state | Couldn't connect to {name} / Couldn't connect to your headphones / Couldn't connect | Connection failed |
+| Failure, busy | Another app is controlling the headphones (for example the Sony app on your phone). Close it and try again. | Another app is using the headphones. |
+| Failure, timeout | The headphones did not answer in time. Make sure they are switched on and nearby, then try again. | Connection timed out. |
+| Failure, refused | The headphones refused the connection. Switch them off and on again, then try again. | Connection refused. |
+| Failure, not listed by Windows | They are off, out of range, or not connected to Windows. Switch them on and connect them in Bluetooth settings, then try again. | Headphones off or disconnected. |
+| Failure, no reason | Make sure they're switched on and connected in Windows Bluetooth settings, then try again. | (none; the wizard note says "Connection failed.") |
+| Remembered card buttons | Connect now (while searching); Open Bluetooth settings | Connect; Bluetooth settings |
+| Failure card buttons | Try again | Try again, Bluetooth settings |
+| Announcer, connected | Connected to {name}. | Connected. |
+| Tray tooltip | SoundConnect · Connecting to {name} / Looking for headphones / Not connected | SoundConnect · {state line} |
+| Tray menu idle line | Not connected | the state line |
+| Wizard, welcome lead | Control your Sony headphones from your PC: noise cancelling, the equalizer and the settings you would otherwise change in the phone app. | Control Sony headphones from your PC. |
+| Wizard, welcome note | SoundConnect is an independent, open project. Not affiliated with, endorsed by, or supported by Sony. | Not affiliated with, endorsed by, or supported by Sony. |
+| Wizard, pair lead | New headphones, or never used with this PC? Pair them in Windows first. Already paired? Select Continue. | Already paired? Select Continue. |
+| Wizard, over-ear steps | Switch the headphones off. / Press and hold the power button for about 7 seconds, until you hear "Bluetooth pairing" and the light flashes blue. / In Windows Bluetooth settings, choose Add device, then Bluetooth, and pick your headphones from the list. | With the headphones off, hold the power button for 7 seconds. / In Bluetooth settings, select Add device, then the headphones. |
+| Wizard, earbuds steps | Put both earbuds in your ears. / Hold your fingers on both touch sensors for about 5 seconds, until you hear "Bluetooth pairing". / (the same Windows step) | With both earbuds in, hold both touch sensors for 5 seconds. / In Bluetooth settings, select Add device, then the headphones. |
+| Wizard buttons | Open Windows Bluetooth settings; Cancel setup | Bluetooth settings; Cancel |
+| Wizard, choose title and lead | Choose your headphones / Switch your headphones on, then scan and select them. | Choose headphones / (none) |
+| Wizard, scan lines | Select Scan to list the Bluetooth devices Windows is connected to. / Looking for Bluetooth devices… / Windows isn't connected to any Bluetooth devices. Connect your headphones in Bluetooth settings, then scan again. / The scan didn't finish ({message}). Try scanning again. | (none) / (none; the button says Scanning…) / No Bluetooth devices found. / Scan failed. |
+| Scan timeout message | The scan got no answer. | No response. |
+| Wizard, done | All set / {model} is connected. SoundConnect remembers them for next time. | Setup complete / (none) |
+| Alert, connection quality | Your headphones disconnect and reconnect to apply it, so audio stops for a few seconds. SoundConnect reconnects to them by itself. | Audio stops for a few seconds while the headphones reconnect. |
+| Alert, answered mode change | Your headphones offered to reconnect for it; SoundConnect kept them connected. | (none; title "Setting changed") |
+| Alert, unanswered mode change | Reconnect your headphones? / They may disconnect for a moment to apply this setting. | Reconnect headphones? / Audio stops for a few seconds. |
+| Alert, other | Your headphones sent a notice / {detail}. SoundConnect answered it.; Your headphones are asking | Headphones notice / {detail}; Headphones request |
+| Update banner | Version X is available / Install it now; SoundConnect restarts by itself when it is done. / Release notes, Later, Install now | Version X is available. / What's new, Later, Install |
+| Update banner, downloading | Downloading version X… / Starting the download. / 40% downloaded. | Downloading update… / Downloading update… 40% |
+| Update banner, installing | Installing version X… / SoundConnect closes and reopens in a moment. | Installing update… |
+| Update errors | The download did not match SoundConnect's signature, so it was not installed. Try again later or download the installer from GitHub. / Couldn't reach GitHub to check for updates. Check your internet connection and try again. / The update failed: {raw} | Signature check failed. / Can't reach the update server. / {raw} |
+| Update notes sheet | Full release page: {url} | Release page: {url} |
+| Settings, updates | SoundConnect updates itself from its GitHub releases. / You have the latest version. / Downloading version X… / Installing version X… / Once a day when SoundConnect starts. / Install now | (none) / Up to date. / Downloading update… / Installing update… / Once a day at startup. / Install |
+| Settings, auto-connect | Connect automatically when the headphones appear / When off, SoundConnect waits for you to select Connect. | Connect automatically / (none) |
+| Settings, set up | Pair and connect another pair, as on first use. | (none) |
+| Settings, forget sheet | SoundConnect stops remembering them and goes back to setup. They stay paired with Windows; remove them in Bluetooth settings if you no longer use them. | They stay paired with Windows. |
+| Settings, startup | Open SoundConnect when you sign in. / Start in the tray without opening the window. / Closing the window keeps your headphones connected. | (none) / Open to the tray. / Closing the window keeps the connection. |
+| Not-connected placeholder | Connect your headphones to change these settings. | Connect headphones to change these settings. |
+| Windows audio, nothing set up | Set up your headphones first; this page then shows how Windows handles their sound. | Set up headphones to change these settings. |
+| Windows audio, not listed | The headphones are not connected to Windows now. Settings show their last known state; defaults cannot point at them until they connect. | Headphones off or disconnected. Showing last known settings. |
+| Windows audio tiles | Games, music and video. Full quality, headphone mic off. / Voice chat and calls through the headphone mic. Windows drops to mono call quality. | Games, music, video. Mic off. / Voice chat and calls. Mono quality. |
+| Windows audio rows | Windows effects added before the sound reaches the headphones. Off lets Sony's EQ and DSEE work on the original. / Virtual surround on top of the game's own mix. Only Windows Settings can change it. / Plays the same sound in both ears, for listening with one ear. Not the same as the mono-with-mic mode. / The rate Windows mixes everything to. 48 kHz suits games and video. / Lets one app take the headphones for itself. Little gain over Bluetooth. / Windows turns the game or music down when a voice app starts. "Do nothing" keeps your volume. / One volume for Windows and the headphones. Applies after the headphones reconnect. / Windows sends SBC or AAC; LDAC needs other drivers. / Lets Windows turn off {adapter} to save power. Can cause slow reconnects or dropouts. / The Windows service Bluetooth needs. Windows starts it when needed. / Shares the air with Bluetooth. Use 5 GHz Wi-Fi or Ethernet if the sound stutters. | Windows effects on top of Sony's EQ and DSEE. / Virtual surround, set in Windows Settings. / Same sound in both ears, for one-ear listening. / The rate Windows mixes all audio to. / Lets one app take over the headphones. / Turns other audio down when a voice app starts. / One volume for Windows and the headphones; applies after reconnecting. / Windows sends SBC or AAC. / Can cause dropouts and slow reconnects. / Required for Bluetooth. / Can interfere with Bluetooth audio. |
+| Windows audio drift | The headphones are not the default playback device. / Voice chat and calls do not play on the headphones' stereo output. / The headphone mic is a default microphone, which switches the sound to mono. / Voice chat does not use the headphones' hands-free audio and mic. | The headphones aren't the default playback device. / Calls don't play on the headphones' stereo output. / The headphone mic is a default microphone (forces mono). / Voice chat doesn't use the headphone mic. |
+| Windows audio advanced | Puts back what these settings were before SoundConnect first changed them. / Nothing to restore yet. SoundConnect saves the current settings before its first change. / Keeps the settings as they are now and drops the saved ones. / Spatial sound and the rest of Windows' own sound options. | Settings from before the first change. / No restore point yet. / Keeps the current settings. / (none) |
+| Windows audio sheets | Puts back what these settings were before SoundConnect first changed them. Windows may ask for permission for the hands-free profile, absolute volume or the adapter. / Windows will ask for permission once for the items marked with a shield. | Restores the settings from before the first change. Windows may ask for permission. / Windows asks for permission for items marked with a shield. |
+| Admin shield | Needs a Windows permission prompt | Needs administrator permission |
+| Plan notes (winaudio crate, `plan.rs`) | Spatial sound is on. Turn it off in Windows Settings > Sound > the headphones. / All sound will be mono, call quality, while an app uses the headphone mic. / These headphones do not offer Hands-Free to this PC, so their mic cannot be used for calls. / No other microphone was found. Calls will have no microphone while Hands-Free is off. / The headphones are not connected to Windows, so they cannot be made the default device now. | Spatial sound is on. Turn it off in Windows Settings. / Sound is mono while an app uses the mic. / These headphones don't offer a mic to this PC. / No other microphone found. Calls will have no mic. / Headphones off or disconnected. Default devices can't change now. |
+| Plan changes (`model.rs`) | Use the headphones' hands-free audio and microphone for voice chat and calls. / Do not let apps take exclusive control. / Let apps take exclusive control, without priority. / Let apps take exclusive control, with priority. / Turn the hands-free profile (headphone mic, mono sound) on. / Allow (Do not allow) Windows to turn off the Bluetooth adapter to save power. | Use the headphone mic for voice chat and calls. / Turn exclusive mode off. / Allow exclusive mode. / Allow exclusive mode, with priority. / Turn the hands-free profile on. / Turn adapter power saving on (off). |
+| Devices, read-only footer | These headphones do not let a computer connect, switch or forget their paired devices. Use the device itself, or Sony's app on a phone. | These headphones can't manage paired devices from a PC. |
+| Devices, pairing footer | The headphones enter pairing mode. Then choose {name} in the new phone or computer's Bluetooth settings. | Select {name} in the other device's Bluetooth settings. |
+| Devices, paired-device sheet | Connected. This PC is one of the two connected devices, so disconnect from the device itself or from Windows. / This PC is connected (and playing). Disconnect it from Windows Bluetooth settings. / Paired, not connected. / Connected and playing. / The headphones remove it from their list. Pair it again from that device to use it. | Connected. Disconnect on that device or in Bluetooth settings. / This PC. Disconnect in Bluetooth settings. / Not connected. / Connected, playing. / Pair it again to use it. |
+| Phone-only note | Only Sony's Sound Connect app on a phone can do this: {features}. | {features}. (under "Only in the phone app") |
+| Connection quality footer | Sound quality uses the highest bit rate the codec allows; a stable connection drops less often in busy places. The headphones may reconnect briefly after a change. | The headphones reconnect briefly after a change. |
+| Ambient slider note | The two lowest positions are Noise cancelling and Wind noise reduction, which also cuts the sound of wind. From 1 to 20 more ambient sound comes through. / The lowest position is Noise cancelling. From 1 to 20 more ambient sound comes through. | Lowest positions: Noise cancelling, Wind noise reduction. / Lowest position: Noise cancelling. |
+| Row subtitles | Start talking to pause music and let voices in / Lets voices through, keeps other sound down / Playback resumes when you put them back on / Spoken notices for power, battery and connection | Pauses music when you talk / Lets voices through / (none) / (none) |
+| Equalizer note | Unavailable while a listening mode other than Standard is active. | Unavailable in this listening mode. |
+| Power off sheet | Turn them on again with their power button. | (none) |
+| Fallback names | your headphones / Your headphones | Headphones |
+
+Sony's own setting summaries
+([generalSettingLabels.ts](<../../src/components/system/generalSettingLabels.ts>)),
+product and feature names, and the dev-only gallery were left as they are.
+The tests carry the new strings (the changed expectations are in
+[connectionStateLabels.test.ts](<../../tests/shell/connectionStateLabels.test.ts>),
+[SetupWizard.test.tsx](<../../tests/onboarding/SetupWizard.test.tsx>),
+[RememberedDevice.test.tsx](<../../tests/onboarding/RememberedDevice.test.tsx>),
+[AppShell.test.tsx](<../../tests/shell/AppShell.test.tsx>),
+[ConnectionStatus.test.tsx](<../../tests/shell/ConnectionStatus.test.tsx>),
+[ConnectionError.test.tsx](<../../tests/shell/ConnectionError.test.tsx>),
+[UpdateBanner.test.tsx](<../../tests/updates/UpdateBanner.test.tsx>) and
+[WindowsAudioPage.test.tsx](<../../tests/winaudio/WindowsAudioPage.test.tsx>)),
+and the winaudio plan fixtures
+([plan-stereo.json](<../../src-tauri/fixtures/winaudio/plan-stereo.json>),
+[plan-mono-mic.json](<../../src-tauri/fixtures/winaudio/plan-mono-mic.json>))
+were regenerated with `cargo run -p winaudio --example fix_plan` from the
+recorded `test-pc.json`, so they remain the crate's real output.

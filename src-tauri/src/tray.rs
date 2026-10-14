@@ -17,8 +17,8 @@ use tauri::{AppHandle, Manager, Wry};
 
 use crate::commands::TauriSink;
 use crate::engine_service::{
-    AlertView, ConnState, DevicesView, EngineCommand, EngineService, SnapshotPayload, SnapshotSink,
-    StatusView,
+    AlertView, ConnState, DevicesView, EngineCommand, EngineService, FailureReason,
+    SnapshotPayload, SnapshotSink, StatusView,
 };
 use crate::noise_view::{NoiseView, NoiseViewMode};
 
@@ -109,6 +109,13 @@ pub struct TraySummary {
     pub device_name: Option<String>,
     pub battery_percent: Option<u8>,
     pub noise: Option<NoiseViewMode>,
+    /// Headphones are remembered (set up).
+    pub remembered: bool,
+    /// Windows lists the remembered headphones as connected.
+    pub windows_connected: bool,
+    pub reason: Option<FailureReason>,
+    /// The status carries an error message (with nothing remembered, a failure even without a reason).
+    pub last_error: bool,
 }
 
 impl TraySummary {
@@ -124,6 +131,52 @@ impl TraySummary {
                 .and_then(|s| s.batteries.as_deref())
                 .and_then(headset_battery),
             noise: payload.and_then(|p| p.noise_view).map(|v| v.mode),
+            remembered: status.remembered.is_some(),
+            windows_connected: status.windows_connected,
+            reason: status.reason,
+            last_error: status.last_error.is_some(),
+        }
+    }
+}
+
+/// The connection state in the renderer's words (`connectionCopy.ts` via
+/// `toConnectionView`): one line, no advice. Ready is "Connected" (the menu's
+/// idle line for a device without noise control; the tooltip shows the
+/// device instead).
+pub fn state_label(s: &TraySummary) -> &'static str {
+    let listed = s.windows_connected && s.reason != Some(FailureReason::NotConnectedToWindows);
+    match s.state {
+        ConnState::Ready => "Connected",
+        ConnState::Connecting | ConnState::Initialising => {
+            if s.reason == Some(FailureReason::ReconnectingAfterSettingChange) {
+                "Reconnecting…"
+            } else {
+                "Connecting…"
+            }
+        }
+        ConnState::Discovering => {
+            if !s.remembered {
+                "No headphones set up"
+            } else if listed {
+                "Connecting…"
+            } else {
+                "Headphones off or disconnected"
+            }
+        }
+        ConnState::Disconnected => {
+            let attempt_failed = matches!(
+                s.reason,
+                Some(FailureReason::Busy | FailureReason::Timeout | FailureReason::Refused)
+            );
+            if (attempt_failed && listed) || (!s.remembered && (s.reason.is_some() || s.last_error)) {
+                "Connection failed"
+            } else if !s.remembered {
+                "No headphones set up"
+            } else if listed {
+                "Ready to connect"
+            } else {
+                "Headphones off or disconnected"
+            }
         }
     }
 }
@@ -145,9 +198,9 @@ pub fn headset_battery(batteries: &[Battery]) -> Option<u8> {
 }
 
 /// `WH-1000XM4 · 90% · Noise cancelling` when ready; otherwise the app name
-/// and the connection state.
+/// and the connection state ([`state_label`]).
 pub fn tooltip_text(s: &TraySummary) -> String {
-    let device = s.device_name.as_deref().unwrap_or("headphones");
+    let device = s.device_name.as_deref().unwrap_or("Headphones");
     let text = match s.state {
         ConnState::Ready => {
             let mut parts = vec![device.to_string()];
@@ -159,21 +212,17 @@ pub fn tooltip_text(s: &TraySummary) -> String {
             }
             parts.join(" · ")
         }
-        ConnState::Connecting | ConnState::Initialising => {
-            format!("{APP_NAME} · Connecting to {device}")
-        }
-        ConnState::Discovering => format!("{APP_NAME} · Looking for headphones"),
-        ConnState::Disconnected => format!("{APP_NAME} · Not connected"),
+        _ => format!("{APP_NAME} · {}", state_label(s)),
     };
     text.chars().take(TOOLTIP_MAX_CHARS).collect()
 }
 
-/// The menu shown for `items`: the noise check items (or a disabled
-/// "Not connected" line), a separator, "Show SoundConnect" and "Quit".
-fn build_menu(app: &AppHandle, items: &[NoiseMenuItem]) -> tauri::Result<Menu<Wry>> {
+/// The menu shown for `items`: the noise check items (or a disabled line with
+/// the connection state, `idle`), a separator, "Show SoundConnect" and "Quit".
+fn build_menu(app: &AppHandle, items: &[NoiseMenuItem], idle: &str) -> tauri::Result<Menu<Wry>> {
     let menu = Menu::new(app)?;
     if items.is_empty() {
-        let idle = MenuItem::with_id(app, "idle", "Not connected", false, None::<&str>)?;
+        let idle = MenuItem::with_id(app, "idle", idle, false, None::<&str>)?;
         menu.append(&idle)?;
     }
     for item in items {
@@ -229,12 +278,13 @@ fn on_menu_event(app: &AppHandle, event: MenuEvent) {
     }
 }
 
-/// Creates the tray icon (app icon, tooltip "SoundConnect", "Not connected" menu).
+/// Creates the tray icon (app icon, tooltip "SoundConnect", "Connecting…" menu
+/// until the first status).
 /// Left click shows the window; right click opens the menu.
 pub fn create(app: &AppHandle) -> tauri::Result<TrayIcon<Wry>> {
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
         .tooltip(APP_NAME)
-        .menu(&build_menu(app, &[])?)
+        .menu(&build_menu(app, &[], "Connecting…")?)
         .show_menu_on_left_click(false)
         .on_menu_event(on_menu_event)
         .on_tray_icon_event(|tray, event| {
@@ -256,7 +306,8 @@ pub fn create(app: &AppHandle) -> tauri::Result<TrayIcon<Wry>> {
 struct TrayState {
     status: StatusView,
     payload: Option<SnapshotPayload>,
-    menu: Option<Vec<NoiseMenuItem>>,
+    /// The applied menu model: noise items and the idle line.
+    menu: Option<(Vec<NoiseMenuItem>, &'static str)>,
     tooltip: Option<String>,
 }
 
@@ -303,8 +354,12 @@ impl TraySink {
                 ConnState::Ready => st.payload.as_ref(),
                 _ => None,
             };
-            let model = noise_menu_model(payload.and_then(|p| p.noise_view.as_ref()));
-            let text = tooltip_text(&TraySummary::from_views(&st.status, payload));
+            let summary = TraySummary::from_views(&st.status, payload);
+            let model = (
+                noise_menu_model(payload.and_then(|p| p.noise_view.as_ref())),
+                state_label(&summary),
+            );
+            let text = tooltip_text(&summary);
             let menu = (force || st.menu.as_ref() != Some(&model)).then(|| model.clone());
             let tooltip = (st.tooltip.as_ref() != Some(&text)).then(|| text.clone());
             st.menu = Some(model);
@@ -316,8 +371,8 @@ impl TraySink {
                 eprintln!("tray: set_tooltip failed: {e}");
             }
         }
-        if let Some(model) = menu {
-            match build_menu(&self.app, &model) {
+        if let Some((items, idle)) = menu {
+            match build_menu(&self.app, &items, idle) {
                 Ok(m) => {
                     if let Err(e) = self.tray.set_menu(Some(m)) {
                         eprintln!("tray: set_menu failed: {e}");
@@ -434,6 +489,10 @@ mod tests {
             device_name: Some(name.into()),
             battery_percent: battery,
             noise,
+            remembered: true,
+            windows_connected: true,
+            reason: None,
+            last_error: false,
         }
     }
 
@@ -461,11 +520,32 @@ mod tests {
     fn tooltip_when_not_ready() {
         let mut s = ready("WH-1000XM4", None, None);
         s.state = ConnState::Connecting;
-        assert_eq!(tooltip_text(&s), "SoundConnect · Connecting to WH-1000XM4");
-        s.state = ConnState::Discovering;
-        assert_eq!(tooltip_text(&s), "SoundConnect · Looking for headphones");
+        assert_eq!(tooltip_text(&s), "SoundConnect · Connecting…");
+        s.reason = Some(FailureReason::ReconnectingAfterSettingChange);
+        assert_eq!(tooltip_text(&s), "SoundConnect · Reconnecting…");
+        s.reason = None;
         s.state = ConnState::Disconnected;
-        assert_eq!(tooltip_text(&s), "SoundConnect · Not connected");
+        assert_eq!(tooltip_text(&s), "SoundConnect · Ready to connect");
+        s.windows_connected = false;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        s.state = ConnState::Discovering;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        s.windows_connected = true;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Connecting…");
+        s.state = ConnState::Disconnected;
+        s.reason = Some(FailureReason::Busy);
+        assert_eq!(tooltip_text(&s), "SoundConnect · Connection failed");
+        s.reason = Some(FailureReason::NotConnectedToWindows);
+        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        s.reason = None;
+        s.remembered = false;
+        assert_eq!(tooltip_text(&s), "SoundConnect · No headphones set up");
+        // Nothing remembered and only an error message: a failure, as in the window.
+        s.last_error = true;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Connection failed");
+        // Ready: the menu's idle line (a device without noise control) says Connected.
+        s.state = ConnState::Ready;
+        assert_eq!(state_label(&s), "Connected");
     }
 
     #[test]

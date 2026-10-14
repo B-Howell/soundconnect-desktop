@@ -17,12 +17,8 @@ export interface AudioModeSwitchProps {
 }
 
 const MODES: { kind: FixKind; icon: IconName; description: string }[] = [
-  { kind: "stereo", icon: "headphones", description: "Games, music and video. Full quality, headphone mic off." },
-  {
-    kind: "monoMic",
-    icon: "chat",
-    description: "Voice chat and calls through the headphone mic. Windows drops to mono call quality.",
-  },
+  { kind: "stereo", icon: "headphones", description: "Games, music, video. Mic off." },
+  { kind: "monoMic", icon: "chat", description: "Voice chat and calls. Mono quality." },
 ];
 
 /**

@@ -15,14 +15,17 @@ export interface ConnectionErrorProps {
   /** The raw technical message; shown only under "Details". */
   message: string;
   onRetry: () => void;
+  /** Opens Windows Bluetooth settings; the button is left out without it. */
+  onOpenBluetoothSettings?: () => void;
   titleRef?: Ref<HTMLHeadingElement>;
 }
 
 /**
- * Connecting failed: a friendly explanation and a retry button, with the raw
- * error kept out of the way under a collapsed "Details" disclosure.
+ * Connecting failed: "Connection failed", the reason in one line, Try again
+ * and Bluetooth settings, with the raw error kept out of the way under a
+ * collapsed "Details" disclosure.
  */
-export function ConnectionError({ deviceName, model, message, onRetry, titleRef }: ConnectionErrorProps) {
+export function ConnectionError({ deviceName, model, message, onRetry, onOpenBluetoothSettings, titleRef }: ConnectionErrorProps) {
   const { title, description } = connectionCopy({ kind: "error", deviceName, message, onRetry });
   return (
     <ConnectionState
@@ -32,9 +35,16 @@ export function ConnectionError({ deviceName, model, message, onRetry, titleRef 
       titleRef={titleRef}
     >
       <SheetButton onPress={onRetry}>Try again</SheetButton>
-      <Disclosure summary="Details">
-        <p className="connection-error__message">{message}</p>
-      </Disclosure>
+      {onOpenBluetoothSettings ? (
+        <SheetButton variant="secondary" onPress={onOpenBluetoothSettings}>
+          Bluetooth settings
+        </SheetButton>
+      ) : null}
+      {message ? (
+        <Disclosure summary="Details">
+          <p className="connection-error__message">{message}</p>
+        </Disclosure>
+      ) : null}
     </ConnectionState>
   );
 }

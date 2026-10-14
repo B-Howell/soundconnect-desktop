@@ -19,8 +19,8 @@ export interface SetupWizard {
 }
 
 /**
- * Step navigation for the setup wizard. A connect started on "Choose your
- * headphones" that succeeds moves on to "All set" by itself. Going back or
+ * Step navigation for the setup wizard. A connect started on "Choose
+ * headphones" that succeeds moves on to "Setup complete" by itself. Going back or
  * leaving clears a settled connect attempt, so a stale failure is not shown
  * again. `next` and `back` read the step when called, so a step card that is
  * still fading out cannot move the wizard from a stale step.

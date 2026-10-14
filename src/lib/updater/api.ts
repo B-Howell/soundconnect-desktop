@@ -71,18 +71,18 @@ export const tauriUpdaterApi: UpdaterApi = {
 export const defaultUpdaterApi: UpdaterApi = isTauri() ? tauriUpdaterApi : noUpdaterApi;
 
 /**
- * A plain sentence for an updater failure: offline, a signature that does
- * not match the public key, or anything else (with the plugin's message).
+ * The reason line under "Update failed": offline, a signature that does not
+ * match the public key, or anything else (the plugin's own message).
  */
 export function updateErrorText(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error);
   if (/signature/i.test(raw)) {
-    return "The download did not match SoundConnect's signature, so it was not installed. Try again later or download the installer from GitHub.";
+    return "Signature check failed.";
   }
   if (/network|connect|dns|timed? ?out|offline|request|reqwest|404|status code/i.test(raw)) {
-    return "Couldn't reach GitHub to check for updates. Check your internet connection and try again.";
+    return "Can't reach the update server.";
   }
-  return `The update failed: ${raw}`;
+  return raw;
 }
 
 /** The GitHub release page of `version`. */
