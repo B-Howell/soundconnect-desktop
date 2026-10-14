@@ -976,6 +976,31 @@ exact file 0.1.10 wrote) and
 ("Disconnected", "Another app has control"). Renderer tests: see the
 Renderer doc.
 
+### Release verification (0.1.11, 2026-10-14)
+
+Static: `cargo test --workspace` 113 passed, 2 ignored (app 70);
+`cargo clippy --workspace --all-targets -- -D warnings` clean; `pnpm
+typecheck` clean; `pnpm test` 341 passed. Independent Codex review: static
+GO after fixing two stale doc statements and keeping a newer
+`settingsVersion` (`a_newer_settings_version_is_kept`); live NOT YET
+VERIFIED.
+
+Live, on the maintainer's PC: the installed 0.1.10 (relaunched with
+`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9334`) found
+0.1.11 through Settings > Check now and installed it from the banner's
+Install; the exe reports 0.1.11. Its first launch migrated `settings.json`
+from the 0.1.10 file (`autoConnect: false`, no version) to
+`autoConnect: true, settingsVersion: 2`, and the renderer's store to
+persist version 2 with `autoConnect: true`, without anyone opening Settings.
+`engine_status` then read `disconnected, windowsConnected: false,
+autoConnect: true`, shown as "Headphones off or disconnected". The XM4 was
+not connected to Windows during the next 10 minutes (Windows'
+`DEVPKEY_Device_IsConnected` false), so the connect on appearance and the
+phone-app takeover were **not** observed live; both rest on the replay tests.
+To confirm: switch the XM4 on with the app running (expect Ready within
+about 3 s), then open the Sony app on the phone (expect "Another app has
+control" and no reconnect).
+
 ## Updates (0.1.9)
 
 The maintainer asked for "a normal app update sequence": a new GitHub release
