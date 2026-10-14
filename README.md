@@ -4,6 +4,8 @@ An unofficial Windows app for controlling Sony headphones from your PC: noise
 cancelling and ambient sound, equalizer, battery, playback and device settings,
 in a desktop interface modelled on Sony's Sound Connect phone app.
 
+**Not affiliated with, endorsed by, or supported by Sony.**
+
 ![SoundConnect Desktop: the Status page with a connected WH-1000XM4, dark theme](docs/readme/soundconnect-status-dark.png)
 
 > **Built with REA.** This project began as a test drive of
@@ -174,4 +176,9 @@ MIT, see [LICENSE](LICENSE). The installer's licence page and the app's
 Settings > Licences sheet also carry upstream SonyHeadphonesClient's MIT
 licence for the bundled engine DLLs.
 
-Sony, Sound Connect and the headphone names are trademarks of Sony Group; product photos are Sony's and are used to identify your own headphones. This is an independent project.
+## Not affiliated with Sony
+
+SoundConnect Desktop is an independent project. It is not affiliated with,
+endorsed by, or supported by Sony. "Sony", "Sound Connect" and the product
+names are Sony's trademarks. The product images shown in the app are Sony's
+copyright and are used only to identify the headphones you have connected.
