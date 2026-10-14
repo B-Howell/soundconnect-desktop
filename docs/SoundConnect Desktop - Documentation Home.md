@@ -37,7 +37,8 @@ automatic pause, multipoint, a read-only paired-device list on protocol V1).
   apply it.
 - **Equalizer page.** Shows the XM4's recorded preset curves.
 - **Windows audio page.** Shows how Windows treats the headphones' sound,
-  with "Fix for music", "Fix for calls" and restore. Admin changes go through
+  with "Fix for music", "Fix for calls" and restore (0.1.9 replaced the two
+  fixes with a choice between "Stereo audio" and "Mono audio with mic"). Admin changes go through
   a file-less elevated helper.
 - **Integration review fixes.** A stale confirmation can no longer apply the
   wrong mode. "Not now" reverts the radio at once. Forgetting another device

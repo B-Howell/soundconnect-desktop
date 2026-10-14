@@ -115,6 +115,22 @@ describe("update banner", () => {
   });
 });
 
+describe("a failed check after an update was found", () => {
+  it("retries the check, not the install", async () => {
+    const user = userEvent.setup();
+    const { update } = fakeUpdate();
+    const api = mockApi(update);
+    const store = createUpdaterStore(api);
+    renderHost(store);
+    await act(() => store.getState().check());
+    api.check.mockRejectedValueOnce(new Error("network unreachable"));
+    await act(() => store.getState().check());
+    await user.click(within(screen.getByRole("alert")).getByRole("button", { name: "Try again" }));
+    expect(api.check).toHaveBeenCalledTimes(3);
+    expect(update.install).not.toHaveBeenCalled();
+  });
+});
+
 describe("update error text", () => {
   it("maps offline and signature failures, else passes the message on", () => {
     expect(updateErrorText(new Error("Network error"))).toMatch(/Couldn't reach GitHub/);

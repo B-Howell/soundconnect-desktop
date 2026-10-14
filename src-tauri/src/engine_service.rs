@@ -617,14 +617,17 @@ impl Worker {
     /// How long to wait for a message before the next step.
     fn wait(&self) -> Duration {
         match self.phase {
-            Phase::Idle => self
-                .next_scan
-                .min(self.next_check)
-                .saturating_duration_since(Instant::now())
-                .clamp(
-                    self.cfg.tick,
-                    self.cfg.discovery_interval.max(self.cfg.tick),
-                ),
+            // Without auto-connect `next_scan` is stale; only the Windows check is due.
+            Phase::Idle => if self.auto_connect && !self.suspended {
+                self.next_scan.min(self.next_check)
+            } else {
+                self.next_check
+            }
+            .saturating_duration_since(Instant::now())
+            .clamp(
+                self.cfg.tick,
+                self.cfg.discovery_interval.max(self.cfg.tick),
+            ),
             _ => self.cfg.tick,
         }
     }
@@ -1069,14 +1072,17 @@ impl Worker {
             .transport()
             .and_then(|t| t.devices().map_err(|e| e.to_string()))
         {
-            Ok(d) => d,
+            Ok(d) => {
+                // A failed list says nothing about Windows' state (as in `check_windows`).
+                let listed = self.lists_watched(&d);
+                self.note_windows(listed, now);
+                d
+            }
             Err(e) => {
                 eprintln!("engine: device list failed: {e}");
                 Vec::new()
             }
         };
-        let listed = self.lists_watched(&devices);
-        self.note_windows(listed, now);
         let pick = devices
             .iter()
             .filter(|d| self.profiles.contains(&d.mac))

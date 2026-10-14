@@ -32,11 +32,11 @@ if ($ChangelogOnly) {
 }
 
 $base = "https://github.com/$Repo/releases/download/v$Version"
+$setup = "SoundConnect.Desktop_${Version}_x64-setup.exe"
 # 0.1.9 is the first version with the in-app updater (latest.json and a .sig).
 $updater = [version]$Version -ge [version]'0.1.9'
 $selfUpdate = if ($updater) { 'Already on 0.1.9 or later? SoundConnect updates itself (Settings, Updates).' } else { 'From 0.1.9 on, SoundConnect updates itself (Settings, Updates).' }
 $versioned = if ($updater) { "the same installer under its versioned name; the in-app updater downloads this one and checks it against $setup.sig." } else { 'the same installer under its versioned name.' }
-$setup = "SoundConnect.Desktop_${Version}_x64-setup.exe"
 $body = @"
 ## Install (Windows 10/11)
 

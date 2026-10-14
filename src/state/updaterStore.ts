@@ -42,7 +42,8 @@ export function createUpdaterStore(api: UpdaterApi) {
         const update = await api.check();
         set(update ? { phase: "available", update } : { phase: "upToDate", update: null });
       } catch (e: unknown) {
-        set({ phase: "error", error: updateErrorText(e) });
+        // Forget any earlier update, so Try again re-checks instead of installing.
+        set({ phase: "error", error: updateErrorText(e), update: null });
       }
     },
     install: async () => {

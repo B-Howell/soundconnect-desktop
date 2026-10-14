@@ -675,11 +675,15 @@ the old four fields plus an optional `autoConnect`; a payload without it keeps
 the stored value, and a changed value is forwarded to the service as
 `setAutoConnect`. The engine command `setAutoConnect` also stores it.
 
-- `autoConnect: false`: after launch the service is idle. No device listing,
-  no socket, no `discovering` status. It connects only when asked
-  (`connect`, `reconnect`), and a failure is not retried.
-- `autoConnect: true`: the old behaviour (discover every 2 s, retry after
-  10 s), preferring the most recently seen remembered device.
+- `autoConnect: false`: after launch the service is idle: no socket, no
+  `discovering` status. Since 0.1.9 it lists Windows' connected devices every
+  3 s for `windowsConnected` (enumeration only; see
+  [Contract changes 0.1.9](#contract-changes-019-windowsconnected)). It
+  connects only when asked (`connect`, `reconnect`), and a failure is not
+  retried.
+- `autoConnect: true`: the old behaviour (discover every `discovery_interval`,
+  3 s since 0.1.9, retry after 10 s, or at once when Windows starts listing
+  the headphones), preferring the most recently seen remembered device.
 
 ### Remembered profiles
 

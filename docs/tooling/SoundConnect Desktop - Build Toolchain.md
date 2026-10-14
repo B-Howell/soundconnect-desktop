@@ -448,7 +448,10 @@ The key pair was made on 2026-10-14 with `pnpm tauri signer generate` into
 `%APPDATA%\soundconnect-signing\` on the maintainer's PC (`soundconnect.key`,
 `soundconnect.key.pub`, and the password in `PASSWORD.txt`), outside the
 repository; `.gitignore` ignores `*.key` and `*.key.pub` in case one is
-copied in. **Back that folder up** (offline, two places): without the
+copied in. The password sits beside the key only because the setup asked
+for it there; moving it into a password manager (and deleting
+`PASSWORD.txt`) keeps a copied folder from being enough to sign. **Back up
+the key and the password** (offline, two places): without the
 private key and its password no later release can be signed with a key the
 installed apps accept, so every user would have to reinstall by hand. Key
 rotation is in Core Services, Updates.
