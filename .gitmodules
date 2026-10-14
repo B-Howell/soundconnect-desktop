@@ -1,0 +1,3 @@
+[submodule "upstream/SonyHeadphonesClient"]
+	path = upstream/SonyHeadphonesClient
+	url = https://github.com/mos9527/SonyHeadphonesClient

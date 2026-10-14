@@ -1,0 +1,81 @@
+{
+  "address": "AA:BB:CC:12:34:56",
+  "stereo": {
+    "id": "{0.0.0.00000000}.{33f2e282-497a-462e-89e8-70ce4e01ffdc}",
+    "name": "Headphones (WH-1000XM4)",
+    "state": "unplugged",
+    "bluetooth": true
+  },
+  "handsFreeRender": null,
+  "handsFreeCapture": null,
+  "handsFreeOffered": true,
+  "handsFreeEnabled": false,
+  "defaultRender": {
+    "id": "{0.0.0.00000000}.{a3077609-e4fc-44f3-9d84-b07314aa8655}",
+    "name": "PreSonus Eris (Realtek(R) Audio)",
+    "isThisDevice": false
+  },
+  "defaultCommunicationsRender": {
+    "id": "{0.0.0.00000000}.{a3077609-e4fc-44f3-9d84-b07314aa8655}",
+    "name": "PreSonus Eris (Realtek(R) Audio)",
+    "isThisDevice": false
+  },
+  "defaultCapture": {
+    "id": "{0.0.1.00000000}.{3aada0b7-295d-4c15-8d48-b0a698fec3d1}",
+    "name": "Snowball (Blue Snowball)",
+    "isThisDevice": false
+  },
+  "defaultCommunicationsCapture": {
+    "id": "{0.0.1.00000000}.{3aada0b7-295d-4c15-8d48-b0a698fec3d1}",
+    "name": "Snowball (Blue Snowball)",
+    "isThisDevice": false
+  },
+  "captureEndpoints": [
+    {
+      "id": "{0.0.1.00000000}.{3aada0b7-295d-4c15-8d48-b0a698fec3d1}",
+      "name": "Snowball (Blue Snowball)",
+      "state": "active",
+      "bluetooth": false
+    },
+    {
+      "id": "{0.0.1.00000000}.{415f103f-9bc9-45b9-9014-17fa5870b51f}",
+      "name": "Microphone (Screaming Bee Audio)",
+      "state": "active",
+      "bluetooth": false
+    },
+    {
+      "id": "{0.0.1.00000000}.{b9a958d0-c4d9-4c37-b07e-a363f7970d8d}",
+      "name": "Stereo Mix (Realtek(R) Audio)",
+      "state": "active",
+      "bluetooth": false
+    },
+    {
+      "id": "{0.0.1.00000000}.{eb5951a6-4566-403a-aea8-8086966164ec}",
+      "name": "Webcam (Webcam)",
+      "state": "active",
+      "bluetooth": false
+    }
+  ],
+  "enhancementsEnabled": false,
+  "spatialSound": "unknown",
+  "monoAudio": false,
+  "defaultFormat": {
+    "sampleRate": 48000,
+    "bitsPerSample": 16,
+    "channels": 2
+  },
+  "exclusiveModeAllowed": true,
+  "exclusivePriority": true,
+  "duckingMode": "doNothing",
+  "absoluteVolumeDisabled": false,
+  "windowsVolumePercent": null,
+  "adapter": {
+    "name": "MediaTek Bluetooth Adapter",
+    "driverVersion": "1.1037.0.429",
+    "powerSavingAllowed": true
+  },
+  "bluetoothServiceRunning": true,
+  "codec": "AAC",
+  "wifi24Active": false,
+  "errors": []
+}

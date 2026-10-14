@@ -1,0 +1,4 @@
+/* The entry card's curve is the current one, so it wears the accent like the selected preset tile. */
+.entry-card .eq-sparkline__line {
+  stroke: var(--accent);
+}

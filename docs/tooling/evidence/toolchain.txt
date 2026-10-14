@@ -1,0 +1,6 @@
+cl: Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+cmake: cmake version 4.4.3
+runner: win25-vs2026 20260925.250.1
+VCToolsVersion: 14.51.36231
+WindowsSDKVersion: 10.0.26100.0\
+config: RelWithDebInfo

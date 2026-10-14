@@ -1,0 +1,20 @@
+.side-nav__list,
+.side-nav__children {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+/* Sub-pages sit tight under their parent. */
+.side-nav__children {
+  margin-top: var(--space-1);
+}
+
+/* Icon-only rail: the sub-pages stay as icons inside a tinted group under
+   the parent, so the hierarchy still reads without labels. */
+.side-nav--collapsed .side-nav__children {
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-sm);
+  background: var(--nav-group-bg);
+}

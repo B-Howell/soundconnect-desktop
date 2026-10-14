@@ -1,0 +1,8 @@
+.admin-shield {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-inline-start: var(--space-1);
+  color: var(--accent);
+  vertical-align: -1px;
+}

@@ -1,0 +1,11 @@
+.winaudio-row__title {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The sentence wraps (ListRow's subtitle is single-line by default elsewhere). */
+.winaudio-row__description {
+  display: block;
+  white-space: normal;
+  line-height: var(--leading-normal);
+}

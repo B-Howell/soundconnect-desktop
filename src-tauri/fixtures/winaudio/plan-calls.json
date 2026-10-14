@@ -1,0 +1,24 @@
+{
+  "changes": [
+    {
+      "change": {
+        "kind": "setHandsFree",
+        "address": "AA:BB:CC:12:34:56",
+        "enabled": true
+      },
+      "summary": "Turn Hands-Free (mono call audio) on.",
+      "admin": true
+    },
+    {
+      "change": {
+        "kind": "useHandsFreeForCommunications",
+        "address": "AA:BB:CC:12:34:56"
+      },
+      "summary": "Use the headphones' Hands-Free audio and microphone for calls.",
+      "admin": false
+    }
+  ],
+  "notes": [
+    "Music will be mono, call quality, while a call app uses the headphone mic."
+  ]
+}

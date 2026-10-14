@@ -1,0 +1,161 @@
+# Tag-driven release. Pushing a tag v<version> (matching package.json and
+# src-tauri/tauri.conf.json) builds the engine DLLs from the pinned upstream submodule
+# exactly as engine.yml does, replays upstream's captures against them, builds the NSIS
+# installer with pnpm dist, and publishes a GitHub Release with:
+#   - SoundConnect Desktop_<version>_x64-setup.exe
+#   - engine-dlls-<upstream-short-sha>.zip (DLLs, import libs, exports, upstream LICENSE)
+#   - SHA256SUMS.txt for both
+# The release notes are the "## <version>" section of CHANGELOG.md.
+# See docs/tooling/SoundConnect Desktop - Build Toolchain.md (Releases).
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CONFIG: RelWithDebInfo
+
+jobs:
+  release:
+    name: Build and publish (win-x64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Check the tag against the app version and changelog
+        id: meta
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          $pkg = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $conf = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($pkg -ne $version -or $conf -ne $version) {
+            throw "tag $env:GITHUB_REF_NAME does not match package.json ($pkg) / tauri.conf.json ($conf)"
+          }
+          $lines = Get-Content CHANGELOG.md
+          $start = [array]::FindIndex($lines, [Predicate[string]] { param($l) $l -match "^## $([regex]::Escape($version))( |$)" })
+          if ($start -lt 0) { throw "CHANGELOG.md has no '## $version' section" }
+          $notes = New-Object System.Collections.Generic.List[string]
+          for ($i = $start + 1; $i -lt $lines.Count -and $lines[$i] -notmatch '^## '; $i++) { $notes.Add($lines[$i]) }
+          ($notes -join "`n").Trim() | Out-File -Encoding utf8 release-notes.md
+          Get-Content release-notes.md
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      # --- Engine DLLs: the same steps as engine.yml ---
+      - name: MSVC developer environment (cl, dumpbin)
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: x64
+
+      - name: Configure engine
+        run: |
+          cmake -S upstream/SonyHeadphonesClient -B build -A x64 `
+            -DMDR_BUILD_CLIENT=OFF -DMDR_ENABLE_CODEGEN=OFF -DMDR_BUILD_SHARED=ON `
+            -DBUILD_TESTING=ON -DMDR_ENABLE_LOG=ON
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build engine
+        run: |
+          cmake --build build --config $env:CONFIG --target mdr_shared mdr-bt_shared mdr_replay_tests mdr_abi_tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test engine (replay every upstream capture + C ABI test)
+        run: |
+          ctest --test-dir build -C $env:CONFIG --output-on-failure --no-tests=error
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Collect engine binaries into engine/bin
+        id: engine
+        run: |
+          $cfg = $env:CONFIG
+          $bin = "engine/bin/$cfg"
+          New-Item -ItemType Directory -Force $bin | Out-Null
+          $pick = @{
+            "build/libmdr/src/$cfg"    = @("mdr-shared.dll", "mdr-shared.lib", "mdr-shared.pdb")
+            "build/libmdr-bt/src/$cfg" = @("mdr-bt-shared.dll", "mdr-bt-shared.lib", "mdr-bt-shared.pdb")
+          }
+          foreach ($dir in $pick.Keys) {
+            foreach ($name in $pick[$dir]) {
+              $path = Join-Path $dir $name
+              if (Test-Path $path) { Copy-Item $path $bin/ }
+              elseif ($name -like "*.pdb") { Write-Host "note: $path not produced" }
+              else { throw "missing build output: $path" }
+            }
+          }
+          dumpbin /NOLOGO /EXPORTS "$bin/mdr-shared.dll" | Out-File -Encoding utf8 "$bin/mdr-shared-exports.txt"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dumpbin /NOLOGO /EXPORTS "$bin/mdr-bt-shared.dll" | Out-File -Encoding utf8 "$bin/mdr-bt-shared-exports.txt"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $commit = (git -C upstream/SonyHeadphonesClient rev-parse HEAD).Trim()
+          $commit | Out-File -Encoding utf8 -NoNewline "$bin/UPSTREAM_COMMIT.txt"
+          "short=$($commit.Substring(0, 7))" >> $env:GITHUB_OUTPUT
+
+      # --- Installer ---
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Install and check
+        run: |
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm typecheck
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build installer (pnpm dist)
+        run: |
+          pnpm dist
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Stage release assets
+        run: |
+          $version = "${{ steps.meta.outputs.version }}"
+          $short = "${{ steps.engine.outputs.short }}"
+          New-Item -ItemType Directory -Force release | Out-Null
+          $setup = "src-tauri/target/release/bundle/nsis/SoundConnect Desktop_${version}_x64-setup.exe"
+          if (-not (Test-Path -LiteralPath $setup)) { throw "missing installer: $setup" }
+          Copy-Item -LiteralPath $setup release/
+
+          $bin = "engine/bin/$env:CONFIG"
+          $zipDir = "build/engine-dlls"
+          New-Item -ItemType Directory -Force $zipDir | Out-Null
+          foreach ($name in @("mdr-shared.dll", "mdr-shared.lib", "mdr-shared-exports.txt",
+                              "mdr-bt-shared.dll", "mdr-bt-shared.lib", "mdr-bt-shared-exports.txt",
+                              "UPSTREAM_COMMIT.txt")) {
+            Copy-Item (Join-Path $bin $name) $zipDir/
+          }
+          Copy-Item upstream/SonyHeadphonesClient/LICENSE "$zipDir/LICENSE-SonyHeadphonesClient.txt"
+          Compress-Archive -Path "$zipDir/*" -DestinationPath "release/engine-dlls-$short.zip"
+
+          Get-ChildItem release -File | Sort-Object Name | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(), $_.Name
+          } | Out-File -Encoding utf8 release/SHA256SUMS.txt
+          Get-Content release/SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem release -File | ForEach-Object { $_.FullName }
+          gh release create $env:GITHUB_REF_NAME @assets `
+            -R $env:GITHUB_REPOSITORY `
+            --title "SoundConnect Desktop ${{ steps.meta.outputs.version }}" `
+            --notes-file release-notes.md `
+            --verify-tag
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

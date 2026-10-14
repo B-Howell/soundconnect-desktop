@@ -1,0 +1,44 @@
+.pairing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The <ol> keeps its list semantics; the numbers are drawn as discs instead of markers. */
+.pairing-steps__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  list-style: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.pairing-steps__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.pairing-steps__number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--row-icon-size);
+  height: var(--row-icon-size);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.pairing-steps__text {
+  padding-top: var(--space-half);
+  font-size: var(--font-size-md);
+  line-height: var(--leading-normal);
+  color: var(--text);
+}

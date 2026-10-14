@@ -1,0 +1,55 @@
+.app-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr);
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* [rail][content]: the rail spans both rows, the title bar and the content
+   share the second column. */
+.app-frame--with-nav {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.app-frame__nav {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.app-frame--with-nav .titlebar,
+.app-frame--with-nav .app-frame__content {
+  grid-column: 2;
+}
+
+.app-frame__content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.app-frame__scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A flex column, so a child with `flex: 1` (a connection state) fills the
+   visible height; at most --page-max-width wide and centred (the scroll area,
+   and so its scrollbar, still spans the content area). A size container, so
+   CardGrid can switch to two columns on the column's width, not the window's. */
+.app-frame__page {
+  container: page / inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--page-max-width);
+  min-height: 100%;
+  margin-inline: auto;
+  padding: var(--space-2) var(--page-gutter) var(--space-7);
+}

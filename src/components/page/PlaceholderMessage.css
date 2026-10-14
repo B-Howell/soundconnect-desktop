@@ -1,0 +1,11 @@
+/* Fills the page's remaining height (the page is a flex column) and centres
+   one quiet line in it. */
+.placeholder-message {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  text-align: center;
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+}

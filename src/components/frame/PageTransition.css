@@ -1,0 +1,6 @@
+/* Each page fills the content area; during a swap the two pages overlap. */
+.page-transition,
+.page-transition__layer {
+  position: absolute;
+  inset: 0;
+}

@@ -1,0 +1,32 @@
+.about-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) var(--space-4) var(--space-4);
+  text-align: center;
+}
+
+/* No radius or shadow: the PNG carries its own rounded square and gold
+   border, and a box shadow drew a halo around its transparent margin. */
+.about-header__icon {
+  width: var(--about-icon-size);
+  height: var(--about-icon-size);
+  margin-bottom: var(--space-3);
+}
+
+.about-header__name {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+.about-header__version {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}

@@ -1,0 +1,84 @@
+# Checks every push and pull request: the renderer (typecheck + Vitest) on Linux, and
+# the Rust core (fmt, clippy, cargo test) on Windows against the engine DLLs from the
+# latest successful engine.yml run (artifact "engine-win-x64"). If no engine run
+# exists yet for this branch, the default branch's latest one is used; if there is
+# none at all, run engine.yml first. See docs/tooling/SoundConnect Desktop - Build Toolchain.md.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  web:
+    name: Renderer (typecheck, vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true # src/lib/licenses.ts inlines upstream's LICENSE (?raw)
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  rust:
+    name: Rust core (fmt, clippy, cargo test)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true # the service tests replay upstream's recorded captures
+
+      - name: Fetch engine DLLs (engine.yml artifact)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $runs = gh run list -R $env:GITHUB_REPOSITORY --workflow engine.yml --branch $env:GITHUB_REF_NAME --status success --limit 1 --json databaseId | ConvertFrom-Json
+          if (-not $runs) {
+            $runs = gh run list -R $env:GITHUB_REPOSITORY --workflow engine.yml --status success --limit 1 --json databaseId | ConvertFrom-Json
+          }
+          if (-not $runs) { throw "no successful engine.yml run; run it first (gh workflow run engine.yml)" }
+          $dest = "engine/bin/RelWithDebInfo"
+          gh run download $runs[0].databaseId -R $env:GITHUB_REPOSITORY -n engine-win-x64 -D $dest
+          if ($LASTEXITCODE -ne 0) { throw "artifact download failed (expired? rerun engine.yml)" }
+          $pinned = (git -C upstream/SonyHeadphonesClient rev-parse HEAD).Trim()
+          $built = (Get-Content "$dest/UPSTREAM_COMMIT.txt" -Raw).Trim()
+          if ($pinned -ne $built) { throw "engine built from $built, submodule pins $pinned; rerun engine.yml" }
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Build the renderer (frontendDist for the Tauri build script)
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal -c clippy,rustfmt
+
+      - name: cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --all --check
+
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test --workspace

@@ -1,0 +1,75 @@
+/* One button the size of a card: glyph tile, headline and summary, a
+   miniature of the state, chevron. Same surface and radius as Card. */
+.entry-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--entry-card-height);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-align: start;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.entry-card:hover {
+  background: var(--surface-2-hover);
+}
+
+.entry-card:active {
+  background: var(--control-active);
+}
+
+.entry-card:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The glyph on the accent tint, the brand's one gold touch per card. */
+.entry-card__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.entry-card__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entry-card__value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entry-card__detail {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The miniature takes what the text leaves, up to 120 px. */
+.entry-card__visual {
+  flex: 0 1 120px;
+  min-width: 64px;
+}
+
+.entry-card__chevron {
+  flex: none;
+  color: var(--text-secondary);
+}

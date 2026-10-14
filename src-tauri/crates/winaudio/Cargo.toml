@@ -1,0 +1,40 @@
+# Windows-side audio settings for the connected headphones: a read model
+# (`WinAudioSnapshot`), fix plans, and apply with read-back. See
+# docs/core/SoundConnect Desktop - Windows Audio.md
+[package]
+name = "winaudio"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "=0.56.0"
+# The `interface` macro (for the local IPolicyConfig) expands to `::windows_core` paths.
+windows-core = "=0.62.2"
+windows = { version = "=0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+    "Win32_System_Ole",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Devices_Bluetooth",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Devices_Properties",
+    "Win32_Devices_FunctionDiscovery",
+    "Win32_System_Services",
+    "Win32_System_Threading",
+    "Win32_System_Wmi",
+    "Win32_NetworkManagement_WiFi",
+    "Win32_Security",
+    "Win32_System_Registry",
+] }

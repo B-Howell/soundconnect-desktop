@@ -1,0 +1,24 @@
+/* The focus ring sits just outside the text, inside the card's padding. */
+.license-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-radius: var(--radius-xs);
+}
+
+.license-text:focus-visible {
+  outline-offset: var(--space-1);
+}
+
+.license-text__heading {
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text);
+}
+
+.license-text__paragraph {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}

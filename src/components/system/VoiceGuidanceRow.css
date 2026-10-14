@@ -1,0 +1,14 @@
+/* A slider row in a grouped list: the hairline above starts at the text edge,
+   like the separator ListRow draws (1 px is the literal hairline). */
+.voice-guidance__volume {
+  position: relative;
+  padding: var(--space-3) var(--space-4);
+}
+
+.voice-guidance__volume::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto var(--space-4);
+  height: 1px;
+  background: var(--separator);
+}

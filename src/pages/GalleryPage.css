@@ -1,0 +1,12 @@
+/* Layout glue for the gallery only; the primitives own their own styling. */
+.gallery__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.gallery__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

@@ -1,0 +1,26 @@
+.ambient-level-meter {
+  position: relative;
+  display: block;
+  height: 4px;
+  margin: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--separator);
+}
+
+.ambient-level-meter__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.ambient-level-meter__thumb {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+  transform: translate(-50%, -50%);
+}

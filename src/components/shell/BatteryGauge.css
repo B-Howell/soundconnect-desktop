@@ -1,0 +1,58 @@
+.battery-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--pill-height);
+  color: var(--text);
+}
+
+/* The capsule: a quiet track with an inset fill bar of the same shape. */
+.battery-gauge__track {
+  display: flex;
+  width: var(--battery-width);
+  height: var(--battery-height);
+  padding: var(--battery-inset);
+  border-radius: var(--radius-pill);
+  background: var(--fill);
+  flex: none;
+}
+
+/* True to the level down to a short stub (half the fill's height, about
+   20 %), so very low levels stay visible; below that the tone colour, not
+   the length, carries the warning. */
+.battery-gauge__fill {
+  width: max(var(--battery-level), calc((var(--battery-height) - 2 * var(--battery-inset)) / 2));
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  transition: width var(--duration-base) var(--ease-out),
+    background-color var(--duration-base) var(--ease-out);
+}
+
+.battery-gauge__percent {
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.battery-gauge__bolt {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  color: var(--success);
+}
+
+.battery-gauge[data-tone="low"] .battery-gauge__fill {
+  background: var(--warning);
+}
+
+.battery-gauge[data-tone="low"] .battery-gauge__percent {
+  color: var(--warning-text);
+}
+
+.battery-gauge[data-tone="critical"] .battery-gauge__fill {
+  background: var(--destructive);
+}
+
+.battery-gauge[data-tone="critical"] .battery-gauge__percent {
+  color: var(--destructive-text);
+}

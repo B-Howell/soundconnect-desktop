@@ -1,0 +1,37 @@
+/* Not inset: the preset row runs edge to edge like any list row; the slider
+   blocks carry the 16 px inset themselves and a hairline from the text edge
+   separates each block, as between rows (1 px is the literal hairline). */
+.equalizer-card__rows {
+  list-style: none;
+}
+
+.equalizer-card__note {
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-tight);
+  color: var(--text-secondary);
+}
+
+.equalizer-card__block {
+  position: relative;
+  padding: var(--space-1) var(--space-4);
+}
+
+.equalizer-card__block::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto var(--space-4);
+  height: 1px;
+  background: var(--separator);
+}
+
+/* The stacked Clear Bass slider has no 44 px row around it, so it gets the
+   card's usual vertical padding. */
+.equalizer-card__block--clear-bass {
+  padding-block: var(--space-3) var(--space-4);
+}
+
+/* Without the preset row the first block has nothing above it to separate from. */
+.equalizer-card__block:first-child::before {
+  display: none;
+}

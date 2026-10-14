@@ -1,0 +1,4 @@
+/* A destructive row reads red, as iOS's "Forget This Device". */
+.forget-row__title {
+  color: var(--destructive-text);
+}

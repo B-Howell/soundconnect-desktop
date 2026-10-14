@@ -1,0 +1,11 @@
+artifact: engine-win-x64 from run 38202290392
+host: Desktop-1 (local, no MSVC build), 2026-10-12
+
+command: engine\bin\RelWithDebInfo\mdr_replay_tests.exe upstream\SonyHeadphonesClient\tests\WH-1000XM3-4.5.2
+exit code: 0
+----
+Replayed 187 packet(s) from upstream\SonyHeadphonesClient\tests\WH-1000XM3-4.5.2
+
+command: engine\bin\RelWithDebInfo\mdr_abi_tests.exe
+exit code: 0
+----

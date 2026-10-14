@@ -1,0 +1,114 @@
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* One row: fixed label column, flexible track, fixed right-aligned value, so
+   a column of these lines up. The input is a full 44 px tall hit target;
+   Chromium centres the track and thumb in it. */
+.slider--inline {
+  display: grid;
+  grid-template-columns: var(--slider-inline-label-width) minmax(0, 1fr) var(--slider-inline-value-width);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.slider--inline .slider__label {
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.slider--inline .slider__input {
+  height: var(--row-min-height);
+}
+
+.slider--inline .slider__value {
+  text-align: end;
+}
+
+/* Centred, not baseline: a label with a leading glyph is a flex box whose
+   baseline would no longer line up with the value. */
+.slider__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.slider__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-md);
+  color: var(--text);
+}
+
+/* Secondary, not gold: the accent stays on the filled track. */
+.slider__leading {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--text-secondary);
+}
+
+.slider__leading svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.slider__value {
+  font-size: var(--font-size-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+/* The input is as tall as the thumb, so the thumb never clips. Chromium only
+   (WebView2 and the dev browser), hence the -webkit- pseudo-elements alone. */
+.slider__input {
+  width: 100%;
+  height: var(--slider-thumb-size);
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider__input:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.slider__input::-webkit-slider-runnable-track {
+  height: var(--slider-track-height);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--fill) 0 var(--slider-fill-from, 0%),
+    var(--accent) var(--slider-fill-from, 0%) var(--slider-fill-to, 0%),
+    var(--fill) var(--slider-fill-to, 0%) 100%
+  );
+}
+
+/* Negative margin centres the thumb on the track: (track - thumb) / 2. */
+.slider__input::-webkit-slider-thumb {
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  margin-top: calc((var(--slider-track-height) - var(--slider-thumb-size)) / 2);
+  border: 0;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: var(--shadow-knob);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* The ring goes on the thumb, where the eye already is. */
+.slider__input:focus-visible {
+  outline: none;
+}
+
+.slider__input:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--shadow-knob), 0 0 0 var(--focus-ring-width) var(--focus-ring);
+}

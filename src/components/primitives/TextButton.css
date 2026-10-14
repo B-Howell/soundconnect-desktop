@@ -1,0 +1,25 @@
+.text-button {
+  min-height: var(--row-min-height);
+  min-width: var(--row-min-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-md);
+  color: var(--accent-text);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.text-button--emphasized {
+  font-weight: var(--weight-semibold);
+}
+
+.text-button:hover:not(:disabled) {
+  opacity: var(--opacity-hover);
+}
+
+.text-button:active:not(:disabled) {
+  opacity: var(--opacity-pressed);
+}
+
+.text-button:disabled {
+  opacity: var(--opacity-disabled);
+}

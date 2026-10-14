@@ -1,0 +1,22 @@
+.connect-failure {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+}
+
+.connect-failure__icon {
+  flex: none;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  color: var(--warning-text);
+}
+
+.connect-failure__text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text);
+}

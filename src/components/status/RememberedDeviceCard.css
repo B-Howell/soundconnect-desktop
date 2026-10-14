@@ -1,0 +1,31 @@
+/* The state line under the name, with a quiet dot (amber after a failure), then the advice below it. */
+.remembered-device__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.remembered-device__state::before {
+  content: "";
+  flex: none;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--text-tertiary);
+}
+
+.remembered-device__state[data-tone="warning"] {
+  color: var(--warning-text);
+}
+
+.remembered-device__state[data-tone="warning"]::before {
+  background: var(--warning);
+}
+
+.remembered-device__advice {
+  display: block;
+}

@@ -1,0 +1,5 @@
+/* Copyable; `anywhere` is only the last resort for a single segment wider than the row. */
+.breakable-url {
+  overflow-wrap: anywhere;
+  user-select: text;
+}

@@ -1,0 +1,75 @@
+/* Covers the window below the title bar, so the caption buttons and the drag
+   region stay usable while a sheet is open. */
+.sheet-layer {
+  position: fixed;
+  inset: var(--titlebar-height) 0 0;
+  z-index: var(--z-sheet);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheet-layer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--backdrop);
+}
+
+/* The grouped page colour, so GroupedList cards inside read as they do on a
+   page; the top edge hairline and shadow lift it off the dimmed page. In a
+   wide window it keeps --sheet-max-width, centred on the window. */
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  width: 100%;
+  max-width: var(--sheet-max-width);
+  max-height: var(--sheet-max-height);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--bg);
+  box-shadow: inset 0 1px 0 var(--surface-edge), var(--shadow-3);
+  font-family: var(--font-text);
+  color: var(--text);
+}
+
+.sheet:focus-visible {
+  outline: none;
+}
+
+.sheet__handle {
+  flex: none;
+  width: var(--sheet-handle-width);
+  height: var(--sheet-handle-height);
+  margin: var(--space-2) auto 0;
+  border-radius: var(--radius-pill);
+  background: var(--text-tertiary);
+}
+
+.sheet__header {
+  flex: none;
+  padding: var(--space-3) var(--space-5) var(--space-4);
+  text-align: center;
+}
+
+.sheet__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.sheet__message {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* Scrolls when a long list (every EQ preset) is taller than the sheet. */
+.sheet__body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--gutter) var(--space-6);
+}

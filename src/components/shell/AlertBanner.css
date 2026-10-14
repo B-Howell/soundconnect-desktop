@@ -1,0 +1,52 @@
+.alert-banner {
+  margin-bottom: var(--space-4);
+}
+
+.alert-banner__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.alert-banner__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.alert-banner__message {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* Text buttons at the trailing edge, as an iOS banner's actions. */
+.alert-banner__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.alert-banner__action {
+  min-height: var(--row-min-height);
+  min-width: var(--row-min-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-md);
+  color: var(--accent-text);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.alert-banner__action--primary {
+  font-weight: var(--weight-semibold);
+}
+
+.alert-banner__action:hover {
+  opacity: var(--opacity-hover);
+}
+
+.alert-banner__action:active {
+  opacity: var(--opacity-pressed);
+}

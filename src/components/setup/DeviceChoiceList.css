@@ -1,0 +1,4 @@
+.device-choice__state {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+}

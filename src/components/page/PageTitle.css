@@ -1,0 +1,55 @@
+/* The page heading: large display type with Sony's tight tracking, aligned
+   with the cards' left edge. */
+.page-title {
+  padding: var(--space-3) 0 var(--space-2);
+  font-size: var(--page-title-size);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight); /* as every heading; the trail's parts inherit it, so both forms are one height */
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+/* A sub-page's title: "Sound › Equalizer" on one baseline, the ancestors in
+   secondary ink as links (gold on hover), the page itself in full ink. */
+.page-title--trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.page-title__trail ol {
+  display: flex;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  list-style: none;
+}
+
+.page-title__trail li {
+  display: flex;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.page-title__crumb {
+  border-radius: var(--radius-sm);
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.page-title__crumb:hover {
+  color: var(--accent);
+}
+
+.page-title__separator {
+  color: var(--text-tertiary);
+  font-weight: var(--weight-regular);
+}
+
+.page-title__current {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--text);
+}

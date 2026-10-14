@@ -1,0 +1,38 @@
+.window-controls {
+  display: flex;
+  align-items: stretch;
+  height: var(--titlebar-height);
+  margin-left: auto;
+}
+
+.window-control {
+  width: var(--control-width);
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.window-control:hover {
+  background: var(--control-hover);
+}
+
+.window-control:active {
+  background: var(--control-active);
+}
+
+.window-control--close:hover {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+.window-control--close:active {
+  background: var(--danger);
+  color: var(--on-danger);
+  opacity: 0.9;
+}
+
+.window-control:focus-visible {
+  outline-offset: -3px;
+}

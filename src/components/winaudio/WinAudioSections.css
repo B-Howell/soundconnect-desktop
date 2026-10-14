@@ -1,0 +1,7 @@
+/* The summary, the outcome note and the notice stack with the card rhythm. */
+.winaudio-sections__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}

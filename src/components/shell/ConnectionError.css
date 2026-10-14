@@ -1,0 +1,11 @@
+/* The raw message: selectable (it is a <p>) so it can be copied into a bug report. */
+.connection-error__message {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--fill-text);
+  text-align: left;
+  overflow-wrap: anywhere;
+}

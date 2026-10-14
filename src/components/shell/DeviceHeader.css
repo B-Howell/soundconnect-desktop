@@ -1,0 +1,57 @@
+/* Stacked and centred in a narrow window; art beside the details from a
+   720 px window (every desktop size: the window's minimum is 960). */
+.device-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-1);
+  text-align: center;
+}
+
+.device-header__details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.device-header__name {
+  max-width: 100%;
+  font-size: var(--font-size-2xl);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.device-header__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.device-header__firmware {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+@media (min-width: 720px) {
+  .device-header {
+    flex-direction: row;
+    gap: var(--space-6);
+    padding: var(--space-2) var(--space-4);
+    text-align: left;
+  }
+
+  .device-header__details,
+  .device-header__status {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .device-header__status {
+    align-items: center;
+  }
+}

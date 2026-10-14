@@ -1,0 +1,43 @@
+.transport-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--transport-button-size);
+  height: var(--transport-button-size);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.transport-button svg {
+  width: var(--transport-glyph-size);
+  height: var(--transport-glyph-size);
+}
+
+.transport-button:hover:not(:disabled) {
+  background: var(--control-hover);
+}
+
+.transport-button:active:not(:disabled) {
+  background: var(--control-active);
+}
+
+.transport-button:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+/* Neutral, not gold: gold marks state (slider fill, switches); this disc is an action. */
+.transport-button--primary {
+  width: var(--transport-primary-size);
+  height: var(--transport-primary-size);
+  background: var(--fill);
+}
+
+.transport-button--primary svg {
+  width: var(--transport-primary-glyph-size);
+  height: var(--transport-primary-glyph-size);
+}
+
+.transport-button--primary:hover:not(:disabled) {
+  background: var(--surface-2-hover);
+}

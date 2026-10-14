@@ -1,0 +1,58 @@
+.segmented {
+  display: flex;
+  gap: 0;
+  height: var(--segmented-height);
+  padding: var(--segmented-inset);
+  border-radius: var(--radius-pill);
+  background: var(--fill);
+}
+
+.segmented__option {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-width: 0;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.segmented[aria-disabled="true"] {
+  opacity: var(--opacity-disabled);
+}
+
+.segmented__option:focus-visible {
+  outline-offset: 0;
+}
+
+.segmented__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--segmented-pill);
+  box-shadow: var(--shadow-knob);
+}
+
+/* Above the pill, which is positioned and would otherwise paint over it. */
+.segmented__label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.segmented__label svg {
+  flex: none;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.segmented__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

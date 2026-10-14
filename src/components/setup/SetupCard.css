@@ -1,0 +1,77 @@
+/* Centred in the window's content area (the page column is a flex column). */
+.setup-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: var(--setup-card-width);
+  margin-inline: auto;
+  padding-block: var(--space-5);
+}
+
+.setup-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+}
+
+.setup-card__visual {
+  display: flex;
+  justify-content: center;
+}
+
+.setup-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.setup-card__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  color: var(--text);
+}
+
+.setup-card__title:focus-visible {
+  border-radius: var(--radius-xs);
+}
+
+.setup-card__lead {
+  font-size: var(--font-size-md);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.setup-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+/* A list inside the card (devices, the model and firmware) sits one step off
+   the card's surface, as the pairing steps do, so it reads as a group. */
+.setup-card__content .card {
+  background: var(--surface-2);
+}
+
+.setup-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.setup-card__secondary {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+}

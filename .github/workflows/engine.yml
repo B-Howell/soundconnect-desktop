@@ -1,0 +1,115 @@
+# Builds upstream libmdr / libmdr-bt as DLLs (mdr-shared.dll, mdr-bt-shared.dll) for the
+# SoundConnect Desktop Rust core, replays upstream's recorded captures against them, and
+# records exports, struct layouts and toolchain versions. The local VS 2019 compiler
+# (MSVC 19.29, toolset 14.29) cannot compile the engine (C1001); see docs/tooling/SoundConnect Desktop - Engine Build.md.
+# Fetch the result with tools/fetch-engine.ps1.
+name: Engine DLLs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "upstream/**"
+      - ".github/workflows/engine.yml"
+      - "engine/tools/**"
+
+permissions:
+  contents: read
+
+env:
+  CONFIG: RelWithDebInfo
+
+jobs:
+  engine:
+    name: Build engine (win-x64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: MSVC developer environment (cl, dumpbin)
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: x64
+
+      - name: Configure
+        run: |
+          cmake -S upstream/SonyHeadphonesClient -B build -A x64 `
+            -DMDR_BUILD_CLIENT=OFF -DMDR_ENABLE_CODEGEN=OFF -DMDR_BUILD_SHARED=ON `
+            -DBUILD_TESTING=ON -DMDR_ENABLE_LOG=ON
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build
+        run: |
+          cmake --build build --config $env:CONFIG --target mdr_shared mdr-bt_shared mdr_replay_tests mdr_abi_tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test (replay every upstream capture + C ABI test)
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          ctest --test-dir build -C $env:CONFIG --output-on-failure --no-tests=error 2>&1 | Tee-Object -FilePath out/ctest.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Collect binaries
+        run: |
+          $cfg = $env:CONFIG
+          $pick = @{
+            "build/libmdr/src/$cfg"    = @("mdr-shared.dll", "mdr-shared.lib", "mdr-shared.pdb")
+            "build/libmdr-bt/src/$cfg" = @("mdr-bt-shared.dll", "mdr-bt-shared.lib", "mdr-bt-shared.pdb")
+            "build/tests/$cfg"         = @("mdr_replay_tests.exe", "mdr_abi_tests.exe")
+          }
+          foreach ($dir in $pick.Keys) {
+            foreach ($name in $pick[$dir]) {
+              $path = Join-Path $dir $name
+              if (Test-Path $path) { Copy-Item $path out/ }
+              elseif ($name -like "*.pdb") { Write-Host "note: $path not produced" }
+              else { throw "missing build output: $path" }
+            }
+          }
+
+      - name: Exports
+        run: |
+          dumpbin /NOLOGO /EXPORTS out/mdr-shared.dll | Out-File -Encoding utf8 out/mdr-shared-exports.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dumpbin /NOLOGO /EXPORTS out/mdr-bt-shared.dll | Out-File -Encoding utf8 out/mdr-bt-shared-exports.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Struct layouts
+        run: |
+          New-Item -ItemType Directory -Force build/sizes | Out-Null
+          cl /nologo /std:c++20 /EHsc `
+            /I upstream/SonyHeadphonesClient/libmdr/include `
+            /I upstream/SonyHeadphonesClient/libmdr-bt/include `
+            engine/tools/sizes.cpp /Fobuild/sizes/ /Febuild/sizes/sizes.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./build/sizes/sizes.exe | Out-File -Encoding utf8 out/struct-sizes.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./build/sizes/sizes.exe --offsets | Out-File -Encoding utf8 out/struct-offsets.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content out/struct-sizes.txt, out/struct-offsets.txt
+
+      - name: Toolchain and provenance
+        run: |
+          $cl = (cmd /c "cl 2>&1" | Select-Object -First 1)
+          $cmake = (cmake --version | Select-Object -First 1)
+          @("cl: $cl", "cmake: $cmake", "runner: $env:ImageOS $env:ImageVersion",
+            "VCToolsVersion: $env:VCToolsVersion", "WindowsSDKVersion: $env:WindowsSDKVersion",
+            "config: $env:CONFIG") | Out-File -Encoding utf8 out/toolchain.txt
+          Get-Content out/toolchain.txt
+          git -C upstream/SonyHeadphonesClient rev-parse HEAD | Out-File -Encoding utf8 -NoNewline out/UPSTREAM_COMMIT.txt
+          Get-ChildItem out -File | Where-Object Name -ne "SHA256SUMS.txt" | Sort-Object Name | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower(), $_.Name
+          } | Out-File -Encoding utf8 out/SHA256SUMS.txt
+          Get-Content out/SHA256SUMS.txt
+
+      - name: Upload engine-win-x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-win-x64
+          path: out/
+          retention-days: 90
+          if-no-files-found: error

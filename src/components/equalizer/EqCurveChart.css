@@ -1,0 +1,142 @@
+/* Grid: tick column | plot, then the band labels under the plot. The plot is
+   inset so the end dots and their labels are not cut by the card edge. */
+.eq-chart {
+  display: grid;
+  grid-template-columns: var(--space-7) minmax(0, 1fr);
+  grid-template-rows: 200px auto;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  padding: var(--space-5) var(--space-6) var(--space-4) var(--space-3);
+}
+
+.eq-chart__y {
+  position: relative;
+}
+
+.eq-chart__tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.eq-chart__plot {
+  position: relative;
+}
+
+.eq-chart__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Recessive hairlines; the 0 line one step stronger. */
+.eq-chart__grid {
+  stroke: var(--fill);
+  stroke-width: 1;
+}
+
+.eq-chart__zero {
+  stroke: var(--separator);
+  stroke-width: 1;
+}
+
+.eq-chart__area {
+  fill: var(--accent);
+  opacity: 0.12;
+}
+
+.eq-chart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: d var(--duration-base) var(--ease-out);
+}
+
+.eq-chart__area {
+  transition: d var(--duration-base) var(--ease-out);
+}
+
+/* An 8 px dot inside a 2 px surface ring (12 px box) so it reads where it sits on the line. */
+.eq-chart__dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition:
+    top var(--duration-base) var(--ease-out),
+    width var(--duration-fast) var(--ease-out),
+    height var(--duration-fast) var(--ease-out);
+}
+
+.eq-chart__dot--active {
+  width: 16px;
+  height: 16px;
+}
+
+/* Hover targets: one column per band, centred on it, the plot's full height. */
+.eq-chart__hit {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  transform: translateX(-50%);
+}
+
+.eq-chart__tooltip {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-2);
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 14px));
+  pointer-events: none;
+  font-size: var(--font-size-xs);
+}
+
+.eq-chart__tooltip-label {
+  color: var(--text-secondary);
+}
+
+.eq-chart__tooltip-value {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.eq-chart__x {
+  grid-column: 2;
+  position: relative;
+  height: 1.2em;
+}
+
+.eq-chart__band {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: var(--font-size-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-chart__line,
+  .eq-chart__area,
+  .eq-chart__dot {
+    transition: none;
+  }
+}

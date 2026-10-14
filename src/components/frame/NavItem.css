@@ -1,0 +1,100 @@
+/* A 40 px row: glyph, then label; hover and pressed fills like a list row. */
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  height: var(--nav-item-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-align: left;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.nav-item:hover:not([aria-current]) {
+  background: var(--control-hover);
+}
+
+.nav-item:active:not([aria-current]) {
+  background: var(--control-active);
+}
+
+/* Inset, so the ring is never clipped by the rail's scroll box. */
+.nav-item:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.nav-item--collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+/* The selection: a soft accent fill and, at its left edge, the gold bar
+   (vertically centred and pill-ended, as Windows 11 draws it). */
+.nav-item__selection {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--nav-selected-bg);
+}
+
+.nav-item__selection::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(50% - var(--nav-indicator-height) / 2);
+  width: var(--nav-indicator-width);
+  height: var(--nav-indicator-height);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.nav-item__icon {
+  position: relative;
+  flex: none;
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+  color: var(--text-secondary);
+}
+
+.nav-item[aria-current] .nav-item__icon {
+  color: var(--accent);
+}
+
+.nav-item__label {
+  position: relative;
+  min-width: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--weight-regular);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-item[aria-current] .nav-item__label {
+  font-weight: var(--weight-semibold);
+}
+
+/* The open group's parent while one of its sub-pages is open: it reads as
+   the group (gold glyph, semibold label) but the fill marks the page alone. */
+.nav-item--ancestor .nav-item__icon {
+  color: var(--accent);
+}
+
+.nav-item--ancestor .nav-item__label {
+  font-weight: var(--weight-semibold);
+}
+
+/* A sub-page: indented so its glyph sits under the parent's label, a 36 px
+   row and an 18 px glyph so the hierarchy reads at a glance. */
+.nav-item--child:not(.nav-item--collapsed) {
+  height: var(--nav-child-height);
+  padding-left: calc(var(--space-3) + var(--nav-icon-size) + var(--space-3));
+}
+
+.nav-item--child .nav-item__icon {
+  width: var(--nav-child-icon-size);
+  height: var(--nav-child-icon-size);
+}

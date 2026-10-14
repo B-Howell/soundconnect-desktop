@@ -1,0 +1,15 @@
+/* Clips its children to the radius so row highlights follow the corners. */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.card--inset {
+  padding: var(--space-4);
+}
+
+/* Inset so the hairline follows the radius and adds no layout size. */
+.card--accent-edge {
+  box-shadow: inset 0 0 0 1px var(--accent-edge);
+}

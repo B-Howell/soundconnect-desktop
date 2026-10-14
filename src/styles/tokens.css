@@ -1,0 +1,245 @@
+/*
+ * SoundConnect Desktop design tokens.
+ *
+ * Structure inherited from Hue Desktop; geometry tuned to the iOS grouped-table
+ * look (plan Task 12). Task 13b re-coloured it Sony black and gold, sampled
+ * from the app icon (src-tauri/icons/source/app-icon.png): charcoal surfaces
+ * and a gold accent in dark, cool white with a bronze accent in light; iOS
+ * green / orange / red stay for status. The reasoning for each value is in
+ * docs/renderer/SoundConnect Desktop - Renderer.md.
+ *
+ * Text-on-tint pairs (`--*-text` on `--*-soft`) are chosen to reach WCAG AA
+ * 4.5:1 at the small sizes chips and secondary buttons use; that is why the
+ * text variants are darker (light) or lighter (dark) than the fill colours.
+ *
+ * Every visual decision in the renderer reads from these custom properties.
+ * Colours are declared once with light-dark(): the browser picks the side
+ * from `color-scheme`, which follows prefers-color-scheme by default and can be
+ * forced by data-theme="light" | "dark" on <html>.
+ * WebView2 and the dev browser are evergreen Chromium, so light-dark() is safe.
+ *
+ * Durations here are mirrored in src/styles/motion.ts (the spring and the
+ * `durations` object) for JavaScript-driven motion; change both together.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* 8-pt spacing scale (plus a half step for hairline-tight stacks) */
+  --space-half: 2px; /* row title to subtitle, tab glyph to label */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radii: small controls, cards, sheets, pills */
+  --radius-xs: 4px; /* small inline text buttons */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  /* Type */
+  --font-text: "Segoe UI Variable Text", "Segoe UI", -apple-system, system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace; /* raw error text */
+  --font-size-2xs: 10px; /* smallest caption */
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 17px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 34px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --leading-tight: 1.2;
+  /* Display headings (page title, device name, state titles): tighter than
+     iOS's -0.01em for Sony's compact, engineered headline feel. */
+  --tracking-display: -0.02em;
+  --leading-normal: 1.45;
+
+  /* Frame geometry shared by components */
+  --titlebar-height: 40px;
+  --control-width: 46px;
+  /* Page side gutter: cards sit 16 px from the window edge, as on iOS. */
+  --gutter: var(--space-4);
+
+  /* Primitive geometry (iOS proportions, in CSS px) */
+  --row-min-height: 44px; /* iOS minimum hit target */
+  --row-icon-size: 22px;
+  --icon-size-sm: 16px; /* chevrons, checks, segment glyphs */
+  --switch-width: 51px;
+  --switch-height: 31px;
+  --switch-inset: 2px;
+  --switch-knob: 27px; /* height - 2 x inset */
+  --segmented-height: 36px;
+  --segmented-inset: 2px;
+  --slider-track-height: 4px;
+  --slider-thumb-size: 28px;
+  --sheet-button-height: 50px;
+  --pill-height: 22px;
+
+  /* Desktop frame (Task 23): a left navigation rail and a content area whose
+     cards sit in a responsive grid, Windows 11 Settings proportions. */
+  --rail-width: 240px; /* expanded rail: glyph, label and the device block */
+  --rail-width-collapsed: 72px; /* icon-only rail below a 1000 px window */
+  --nav-item-height: 40px; /* Windows 11 Settings nav row */
+  --nav-icon-size: 20px;
+  --nav-child-height: 36px; /* a sub-page row (Sound's Equalizer, Noise control) */
+  --nav-child-icon-size: 18px;
+  --entry-card-height: 76px; /* a sub-page entry card (Sound's Equalizer, Noise control) */
+  --nav-indicator-width: 3px; /* the gold bar at the selected item's left edge */
+  --nav-indicator-height: 16px;
+  --rail-art-size: 72px; /* XM4 art in the rail's device block */
+  --page-gutter: var(--space-5); /* 24 px content padding and grid gap */
+  /* Widest the content column grows; the page centres within the content area. */
+  --content-max-width: 1100px;
+  --page-max-width: calc(var(--content-max-width) + 2 * var(--page-gutter));
+  --sheet-max-width: 592px; /* sheets stay phone-width and centred on a wide window */
+  --page-title-size: var(--font-size-2xl);
+  --battery-width: 34px;
+  --battery-height: 16px;
+  --battery-inset: 2px;
+  --state-visual-size: 88px; /* pulse disc behind the connection-state glyph */
+  --state-glyph-size: 44px; /* half the disc */
+  --state-card-max-width: 320px;
+
+  /* Setup wizard (Task 25) */
+  --setup-card-width: 560px; /* the wizard's one centred card */
+  --setup-icon-size: 88px; /* app icon on the welcome step */
+  --progress-dot-size: 8px;
+  --progress-dot-current-width: 24px; /* the current step's dot is a short pill */
+
+  /* Home cards geometry (Task 14) */
+  --transport-button-size: 44px; /* previous / next: the iOS minimum hit target */
+  --transport-primary-size: 56px; /* play / pause disc */
+  --transport-glyph-size: 24px;
+  --transport-primary-glyph-size: 28px;
+
+  /* Sheets, pickers and EQ rows (Tasks 15 / 16) */
+  --sheet-handle-width: 36px; /* iOS grabber */
+  --sheet-handle-height: 5px;
+  --sheet-max-height: 88%; /* of the area under the title bar, so the dimmed page still shows above */
+  --slider-inline-label-width: 64px; /* EQ band labels such as "2.5 kHz" */
+  --slider-inline-value-width: 32px; /* signed values such as "+10" */
+
+  /* Settings and About (Task 17) */
+  --about-icon-size: 72px; /* app icon above the About list, as iOS About screens show it */
+
+  /* States: dimmed when disabled, faded while pressed (iOS-like), focus ring */
+  --opacity-disabled: 0.4;
+  --opacity-pressed: 0.7;
+  --opacity-hover: 0.8; /* text buttons under the pointer: lighter than pressed */
+  --focus-ring-width: 2px;
+
+  /* Layering */
+  --z-sheet: 20;
+  --z-popover: 30;
+
+  /* Motion (mirrored in src/styles/motion.ts) */
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 400ms;
+  --duration-pulse: 1800ms; /* one breath of the searching pulse (CSS only, not mirrored) */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); /* mirrored as easeOut in motion.ts */
+
+  /* Palette: Sony black and gold. Dark is the hero: its three greys are the
+     icon's own (#141414 background, #232323 touch panel, #303030 cup shell).
+     Light keeps iOS's cool grouped white with charcoal text. */
+  --bg: light-dark(#f2f2f7, #141414);
+  --surface: light-dark(#ffffff, #232323);
+  --surface-2: light-dark(#f2f2f7, #303030);
+  --surface-2-hover: light-dark(#e5e5ea, #3a3a3a);
+  --surface-elevated: light-dark(#ffffff, #303030);
+  --surface-edge: light-dark(rgba(60, 60, 67, 0.08), rgba(255, 240, 220, 0.06));
+  --text: light-dark(#141414, #f4f2ee); /* icon charcoal / warm off-white */
+  /* Warm grey in dark (5.83:1 on --surface); iOS secondaryLabel in light. */
+  --text-secondary: light-dark(#6c6c70, #a19d97);
+  /* tertiaryLabel: chevrons and other decorative glyphs only, never text. */
+  --text-tertiary: light-dark(rgba(60, 60, 67, 0.3), rgba(244, 238, 228, 0.3));
+  /* tertiarySystemFill (warm-tinted in dark): segmented track, slider track, neutral chip. */
+  --fill: light-dark(rgba(118, 118, 128, 0.12), rgba(128, 120, 110, 0.24));
+  /* Text on --fill (neutral chip): 4.55:1 light, 5.13:1 dark. */
+  --fill-text: light-dark(#6c6c70, #aeaaa4);
+  /* Switch "off" track and the selected segment's pill (warm greys in dark). */
+  --switch-off: light-dark(#e9e9ea, #3d3b38);
+  --segmented-pill: light-dark(#ffffff, #57534d);
+  --knob: #ffffff;
+  /* Hairlines: iOS separator in light, warm grey in dark. */
+  --separator: light-dark(rgba(60, 60, 67, 0.18), rgba(120, 110, 98, 0.5));
+  /* Gold, sampled from the icon (median of its gold pixels, #d8a85e: 7.25:1 on
+     --surface dark, unchanged). Gold fails on white (2.17:1), so light uses
+     bronze: #9a6a24 for fills (white text on it 4.71:1) and the deeper #80571c
+     for text (6.37:1 on white). */
+  --accent: light-dark(#9a6a24, #d8a85e);
+  --accent-text: light-dark(#80571c, #d8a85e);
+  /* White on bronze; charcoal on gold (8.49:1), as on Sony's gold buttons. */
+  --on-accent: light-dark(#ffffff, #141414);
+  /* Gold tint kept low in dark (14 %) so the pulse disc and chips stay a whisper of gold, not brown. */
+  --accent-soft: light-dark(rgba(154, 106, 36, 0.12), rgba(216, 168, 94, 0.14));
+  /* The one gold hairline: the device header card's edge. */
+  --accent-edge: light-dark(rgba(154, 106, 36, 0.22), rgba(216, 168, 94, 0.3));
+  /* Switches are gold when on (Sony), not iOS green. */
+  --switch-on: var(--accent);
+  --control-hover: light-dark(rgba(60, 60, 67, 0.08), rgba(255, 255, 255, 0.08));
+  --control-active: light-dark(rgba(60, 60, 67, 0.14), rgba(255, 255, 255, 0.14));
+  /* Windows 11 caption close-button red, not an iOS colour: the title bar is Windows chrome. */
+  --danger: #c42b1c;
+  --on-danger: #ffffff;
+  /* iOS system green / orange / red with their AA text-on-tint variants
+     (battery, chips, destructive button). Dark red text is lighter than iOS's
+     #ff6961 because the charcoal surface is lighter than iOS black: 4.89:1. */
+  --success: light-dark(#34c759, #30d158);
+  --success-text: light-dark(#1d7a33, #30d158);
+  --success-soft: light-dark(rgba(52, 199, 89, 0.15), rgba(48, 209, 88, 0.18));
+  --warning: light-dark(#ff9500, #ff9f0a);
+  --warning-text: light-dark(#c93400, #ff9f0a);
+  --warning-soft: light-dark(rgba(255, 149, 0, 0.15), rgba(255, 159, 10, 0.18));
+  --destructive: light-dark(#ff3b30, #ff453a);
+  --destructive-text: light-dark(#d70015, #ff7a72);
+  --destructive-soft: light-dark(rgba(255, 59, 48, 0.12), rgba(255, 69, 58, 0.2));
+  --selection: light-dark(rgba(154, 106, 36, 0.22), rgba(216, 168, 94, 0.32));
+  --focus-ring: var(--accent);
+  /* Dims the page behind a sheet; deeper in dark so the sheet still separates. */
+  --backdrop: light-dark(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.6));
+  --scrollbar-thumb: light-dark(rgba(60, 60, 67, 0.25), rgba(255, 255, 255, 0.2));
+
+  /* The navigation rail: one step off the page (darker in light, lighter in
+     dark) so the rail reads as chrome and the cards as content. */
+  --sidebar-bg: light-dark(#e8e8ed, #1c1c1c);
+  --sidebar-edge: light-dark(rgba(60, 60, 67, 0.12), rgba(255, 240, 220, 0.06));
+  /* Selected nav item: the accent tint, a touch stronger than chips so it reads on the rail. */
+  --nav-selected-bg: light-dark(rgba(154, 106, 36, 0.14), rgba(216, 168, 94, 0.16));
+  /* The icon-only rail's sub-page group: a faint tint that binds the icons to their parent. */
+  --nav-group-bg: light-dark(rgba(60, 60, 67, 0.06), rgba(255, 255, 255, 0.05));
+
+  /* Frosted surface recipe (see .glass in global.css): white / charcoal (--surface) at 72 % */
+  --glass-bg: light-dark(rgba(255, 255, 255, 0.72), rgba(35, 35, 35, 0.72));
+  --glass-edge: light-dark(rgba(255, 255, 255, 0.5), rgba(255, 240, 220, 0.08));
+  --glass-blur: blur(24px) saturate(1.4);
+
+  /* Elevation: shadow colours switch with the theme, geometry does not */
+  --shadow-ink-1: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
+  --shadow-ink-2: light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.35));
+  --shadow-ink-3a: light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.4));
+  --shadow-ink-3b: light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.55));
+  --shadow-1: 0 1px 2px var(--shadow-ink-1);
+  --shadow-2: 0 1px 2px var(--shadow-ink-1), 0 12px 32px var(--shadow-ink-2);
+  --shadow-3: 0 2px 6px var(--shadow-ink-3a), 0 24px 64px var(--shadow-ink-3b);
+  /* Switch knob and selected segment: the iOS two-layer lift. */
+  --shadow-knob: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

@@ -1,0 +1,11 @@
+[package]
+name = "mdr-sys"
+version = "0.1.0"
+description = "Raw FFI declarations for the upstream libmdr C ABI (mdr-shared.dll, mdr-bt-shared.dll)"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+links = "mdr-shared"
+build = "build.rs"
+
+[dependencies]

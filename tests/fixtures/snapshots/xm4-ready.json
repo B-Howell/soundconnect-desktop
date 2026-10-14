@@ -1,0 +1,242 @@
+{
+  "snapshot": {
+    "protocol": "V1",
+    "initialized": true,
+    "ready": true,
+    "dirty": false,
+    "model": {
+      "protocolVersion": 28672,
+      "audioCodec": "aac",
+      "modelColor": 1
+    },
+    "batteries": [
+      {
+        "part": "main",
+        "present": true,
+        "levelPercent": 90,
+        "updateThresholdPercent": 255,
+        "charging": "no"
+      }
+    ],
+    "playback": {
+      "status": "playing",
+      "volume": 12
+    },
+    "noiseControl": {
+      "mode": "cancelling",
+      "ambientLevel": 255,
+      "changingAsmLevel": false,
+      "focusOnVoice": false,
+      "buttonMode": "none",
+      "adaptiveAmbient": false,
+      "adaptiveSensitivity": "unknown"
+    },
+    "speakToChat": {
+      "enabled": false,
+      "sensitivity": "auto",
+      "timeout": "short"
+    },
+    "listening": {
+      "mode": "standard",
+      "backgroundRoom": "unknown"
+    },
+    "equalizer": {
+      "preset": "bright",
+      "clearBass": -1,
+      "bandCount": 5,
+      "dseeEnabled": true,
+      "dseeType": "hx",
+      "available": true,
+      "dseeAvailable": true,
+      "bands": [
+        0,
+        5,
+        7,
+        7,
+        9
+      ]
+    },
+    "equalizerPresets": [
+      {
+        "id": "off",
+        "name": ""
+      },
+      {
+        "id": "bright",
+        "name": ""
+      },
+      {
+        "id": "excited",
+        "name": ""
+      },
+      {
+        "id": "mellow",
+        "name": ""
+      },
+      {
+        "id": "relaxed",
+        "name": ""
+      },
+      {
+        "id": "vocal",
+        "name": ""
+      },
+      {
+        "id": "treble",
+        "name": ""
+      },
+      {
+        "id": "bass",
+        "name": ""
+      },
+      {
+        "id": "speech",
+        "name": ""
+      },
+      {
+        "id": "custom",
+        "name": ""
+      },
+      {
+        "id": "user1",
+        "name": ""
+      },
+      {
+        "id": "user2",
+        "name": ""
+      }
+    ],
+    "pairedDevices": [
+      {
+        "connected": true,
+        "playbackDevice": true,
+        "macAddress": "00:11:22:33:44:51",
+        "name": "Desktop-1"
+      },
+      {
+        "connected": false,
+        "playbackDevice": false,
+        "macAddress": "00:11:22:33:44:52",
+        "name": "Laptop-1"
+      },
+      {
+        "connected": false,
+        "playbackDevice": false,
+        "macAddress": "00:11:22:33:44:53",
+        "name": "Phone-1"
+      }
+    ],
+    "pairing": {
+      "enabled": false
+    },
+    "sourceSwitchControl": null,
+    "generalSettings": [
+      {
+        "index": 0,
+        "info": {
+          "index": 0,
+          "kind": "boolean",
+          "writable": true
+        },
+        "value": false,
+        "subject": "TOUCH_PANEL_SETTING",
+        "summary": ""
+      },
+      {
+        "index": 1,
+        "info": {
+          "index": 1,
+          "kind": "boolean",
+          "writable": true
+        },
+        "value": true,
+        "subject": "MULTIPOINT_SETTING",
+        "summary": "MULTIPOINT_SETTING_SUMMARY"
+      }
+    ],
+    "assignableControls": [
+      {
+        "location": "custom",
+        "kind": "button",
+        "action": "noiseControl",
+        "options": [
+          "noiseControl",
+          "googleAssistant",
+          "amazonAlexa"
+        ]
+      }
+    ],
+    "power": {
+      "autoPowerOffMinutes": 0,
+      "wearingPower": "unavailable",
+      "autoPause": true,
+      "headGesture": false,
+      "shutdownRequested": false
+    },
+    "voiceGuidance": {
+      "enabled": true,
+      "volume": 0
+    },
+    "connectionMode": {
+      "audioPriority": "stability"
+    },
+    "safeListening": null,
+    "wearingStatus": null,
+    "features": {
+      "ADAPTIVE_AMBIENT_SOUND": "unavailable",
+      "AMBIENT_SOUND": "available",
+      "ASSIGNABLE_CONTROLS": "available",
+      "AUTO_PAUSE": "available",
+      "AUTO_POWER_OFF": "available",
+      "BATTERY_CASE": "unavailable",
+      "BATTERY_LEFT_RIGHT": "unavailable",
+      "BATTERY_SINGLE": "available",
+      "CONNECTION_MODE": "available",
+      "DSEE": "available",
+      "EQUALIZER": "available",
+      "GENERAL_SETTINGS": "available",
+      "HEAD_GESTURE": "unavailable",
+      "IDENTITY": "available",
+      "LISTENING_BACKGROUND_MUSIC": "unavailable",
+      "LISTENING_CINEMA": "unavailable",
+      "LISTENING_MODE": "unavailable",
+      "LISTENING_SOUND_LEAKAGE_REDUCTION": "unavailable",
+      "LISTENING_VOICE_BOOST": "unavailable",
+      "NOISE_CANCELLING": "available",
+      "NOISE_CONTROL_BUTTON": "unavailable",
+      "PAIRED_DEVICE_MANAGEMENT": "available",
+      "PAIRING_MODE": "available",
+      "PLAYBACK_CONTROL": "available",
+      "PLAYBACK_METADATA": "available",
+      "PLAYBACK_VOLUME": "available",
+      "SAFE_LISTENING": "unavailable",
+      "SHUTDOWN": "available",
+      "SOURCE_SWITCH_CONTROL": "unavailable",
+      "SPEAK_TO_CHAT": "available",
+      "VOICE_GUIDANCE": "available",
+      "VOICE_GUIDANCE_VOLUME": "unavailable",
+      "WEARING_DETECTION": "available",
+      "WEARING_STATUS": "unavailable"
+    },
+    "texts": {
+      "modelName": "WH-1000XM4",
+      "firmwareVersion": "2.9.0",
+      "uniqueId": "AA:BB:CC:12:34:56",
+      "modelSeries": "PREMIUM",
+      "modelColor": "BLACK",
+      "lastAlert": "NO_USE",
+      "trackTitle": "Sample Artist - \"Sample Track\" (Live)",
+      "trackAlbum": "",
+      "trackArtist": "SampleArtistMusic"
+    }
+  },
+  "noiseView": {
+    "mode": "cancelling",
+    "ambientLevel": 20,
+    "focusOnVoice": false,
+    "canCancel": true,
+    "canAmbient": true,
+    "canWind": true,
+    "canFocusOnVoice": true
+  }
+}

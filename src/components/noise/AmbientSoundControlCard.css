@@ -1,0 +1,26 @@
+/* The card is not inset: the Focus on voice row runs edge to edge like any
+   list row, so the padded blocks carry the 16 px inset themselves. */
+.ambient-card__mode {
+  padding: var(--space-4);
+}
+
+.ambient-card__level {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.ambient-card__rows {
+  list-style: none;
+}
+
+/* A hairline from the text edge to the card's right edge, as between rows
+   (1 px is the literal hairline, like ListRow's). */
+.ambient-card__rows::before {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-left: var(--space-4);
+  background: var(--separator);
+}

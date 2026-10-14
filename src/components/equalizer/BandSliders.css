@@ -1,0 +1,5 @@
+/* The 44 px rows sit flush; the inputs' own height is the spacing. */
+.band-sliders {
+  display: flex;
+  flex-direction: column;
+}

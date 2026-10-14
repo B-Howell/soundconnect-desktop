@@ -1,0 +1,36 @@
+/* Inset by the card's inner padding so the label lines up with row text. */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) var(--space-2);
+}
+
+/* The first header on a page sits just under the title bar. */
+.section-header:first-child {
+  padding-top: var(--space-3);
+}
+
+.section-header__title {
+  font-family: var(--font-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-tight);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.section-header__action {
+  font-size: var(--font-size-sm);
+  color: var(--accent-text);
+}
+
+.section-header__action button {
+  border-radius: var(--radius-xs);
+}
+
+.section-header__action button:hover {
+  opacity: var(--opacity-hover);
+}

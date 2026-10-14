@@ -1,0 +1,33 @@
+.toggle {
+  position: relative;
+  flex: none;
+  width: var(--switch-width);
+  height: var(--switch-height);
+  border-radius: var(--radius-pill);
+  background: var(--switch-off);
+  transition: background-color var(--duration-base) var(--ease-out);
+}
+
+.toggle[aria-checked="true"] {
+  background: var(--switch-on);
+}
+
+.toggle:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.toggle__knob {
+  position: absolute;
+  top: var(--switch-inset);
+  left: var(--switch-inset);
+  width: var(--switch-knob);
+  height: var(--switch-knob);
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: var(--shadow-knob);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.toggle[aria-checked="true"] .toggle__knob {
+  transform: translateX(calc(var(--switch-width) - var(--switch-knob) - 2 * var(--switch-inset)));
+}

@@ -1,0 +1,33 @@
+/* One column, then two from a 700 px page column (container queries cannot
+   read custom properties, so the threshold is literal here): at the default
+   1180 px window that is two 434 px columns, at the 960 px minimum (rail
+   collapsed) two of 408 px, close to the 388 px the cards were drawn for. */
+.card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--page-gutter);
+}
+
+@container page (min-width: 700px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card-stack--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.card-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* A stack whose sections all rendered nothing (a component returning null
+   inside it) still must not take a cell; CardStack itself already skips the
+   case where its children are null. */
+.card-stack:empty {
+  display: none;
+}

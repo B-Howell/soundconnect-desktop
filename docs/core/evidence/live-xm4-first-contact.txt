@@ -1,0 +1,92 @@
+# Live first contact: SoundConnect Desktop engine thread with the maintainer's WH-1000XM4
+# Date: 2026-10-12. Binary: src-tauri/target/debug/soundconnect-desktop.exe (commit be670db),
+# run with SOUNDCONNECT_DUMP_SNAPSHOT=1, stderr captured. The upstream engine's 2-second
+# discovery chatter ([BT] Scanning radio / BluetoothFindFirstDevice FAILED error=259 /
+# No devices found / GetDevicesList ...) is filtered out; every other line is verbatim.
+# The first connection was dropped by the device during init (recv returned 0); the
+# service backed off 10 s and the second connection reached Ready.
+
+engine: dumping snapshots to %LOCALAPPDATA%\SoundConnect Desktop\last-snapshot.json
+engine: status Discovering device=- address=- protocol=- lastError=-
+[BT] Found device: name="WH-1000XM4" mac=AA:BB:CC:12:34:56 connected=32 authenticated=8 remembered=16
+engine: discovered AA:BB:CC:12:34:56 WH-1000XM4
+engine: connecting AA:BB:CC:12:34:56 uuid=956C7B26-D49A-4BA8-B03F-B17D393CB6E2 (V2)
+[BT] Connect called: mac=AA:BB:CC:12:34:56 uuid=956C7B26-D49A-4BA8-B03F-B17D393CB6E2
+[BT] WSAStartup OK
+[BT] socket() returned 1600
+[BT] Connecting to btAddr=0xAABBCC123456, serviceClassId={956C7B26-D49A-4BA8-...}
+[BT] connect() returned SOCKET_ERROR, WSA err=10035
+[BT] Connect in progress (WOULDBLOCK/INPROGRESS) - normal for non-blocking
+engine: status Connecting device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V2 lastError=-
+[BT] Poll: exceptfds signaled! SO_ERROR=10049 (The requested address is not valid in its context.)
+engine: attempt 956C7B26-D49A-4BA8-B03F-B17D393CB6E2 failed: mdrConnectionPoll failed: Networking error (5): The requested address is not valid in its context.
+engine: connecting AA:BB:CC:12:34:56 uuid=96CC203E-5068-46AD-B32D-E316F5E069BA (V1)
+[BT] Connect called: mac=AA:BB:CC:12:34:56 uuid=96CC203E-5068-46AD-B32D-E316F5E069BA
+[BT] socket() returned 1600
+[BT] Connecting to btAddr=0xAABBCC123456, serviceClassId={96CC203E-5068-46AD-...}
+[BT] connect() returned SOCKET_ERROR, WSA err=10035
+[BT] Connect in progress (WOULDBLOCK/INPROGRESS) - normal for non-blocking
+engine: status Connecting device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V1 lastError=-
+engine: connected AA:BB:CC:12:34:56 (V1), initialising
+engine: status Initialising device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V1 lastError=-
+engine: link lost: mdrHeadphonesPoll failed: No connection has been established (6): Unable to receive from the device (No connection has been established)
+engine: status Disconnected device=- address=- protocol=- lastError=mdrHeadphonesPoll failed: No connection has been established (6): Unable to receive from the device (No connection has been established)
+engine: status Discovering device=- address=- protocol=- lastError=mdrHeadphonesPoll failed: No connection has been established (6): Unable to receive from the device (No connection has been established)
+[BT] Found device: name="WH-1000XM4" mac=AA:BB:CC:12:34:56 connected=32 authenticated=8 remembered=16
+engine: discovered AA:BB:CC:12:34:56 WH-1000XM4
+engine: connecting AA:BB:CC:12:34:56 uuid=956C7B26-D49A-4BA8-B03F-B17D393CB6E2 (V2)
+[BT] Connect called: mac=AA:BB:CC:12:34:56 uuid=956C7B26-D49A-4BA8-B03F-B17D393CB6E2
+[BT] socket() returned 1628
+[BT] Connecting to btAddr=0xAABBCC123456, serviceClassId={956C7B26-D49A-4BA8-...}
+[BT] connect() returned SOCKET_ERROR, WSA err=10035
+[BT] Connect in progress (WOULDBLOCK/INPROGRESS) - normal for non-blocking
+engine: status Connecting device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V2 lastError=-
+[BT] Poll: exceptfds signaled! SO_ERROR=10049 (The requested address is not valid in its context.)
+engine: attempt 956C7B26-D49A-4BA8-B03F-B17D393CB6E2 failed: mdrConnectionPoll failed: Networking error (5): The requested address is not valid in its context.
+engine: connecting AA:BB:CC:12:34:56 uuid=96CC203E-5068-46AD-B32D-E316F5E069BA (V1)
+[BT] Connect called: mac=AA:BB:CC:12:34:56 uuid=96CC203E-5068-46AD-B32D-E316F5E069BA
+[BT] socket() returned 1628
+[BT] Connecting to btAddr=0xAABBCC123456, serviceClassId={96CC203E-5068-46AD-...}
+[BT] connect() returned SOCKET_ERROR, WSA err=10035
+[BT] Connect in progress (WOULDBLOCK/INPROGRESS) - normal for non-blocking
+engine: status Connecting device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V1 lastError=-
+engine: connected AA:BB:CC:12:34:56 (V1), initialising
+engine: status Initialising device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V1 lastError=-
+engine: snapshot model= firmware= protocol=V1 protocolVersion=0x7000 battery= noise=Off/20 ready=false
+engine: snapshot model= firmware= protocol=V1 protocolVersion=0x7000 battery= noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware= protocol=V1 protocolVersion=0x7000 battery= noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery= noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery= noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Off/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=0% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=false
+engine: status Ready device=WH-1000XM4 address=AA:BB:CC:12:34:56 protocol=V1 lastError=-
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=true features=[AMBIENT_SOUND,ASSIGNABLE_CONTROLS,AUTO_PAUSE,AUTO_POWER_OFF,BATTERY_SINGLE,CONNECTION_MODE,DSEE,EQUALIZER,GENERAL_SETTINGS,IDENTITY,NOISE_CANCELLING,PAIRED_DEVICE_MANAGEMENT,PAIRING_MODE,PLAYBACK_CONTROL,PLAYBACK_METADATA,PLAYBACK_VOLUME,SHUTDOWN,SPEAK_TO_CHAT,VOICE_GUIDANCE,WEARING_DETECTION]
+engine: snapshot model=WH-1000XM4 firmware=2.9.0 protocol=V1 protocolVersion=0x7000 battery=Main=90% noise=Cancelling/20 ready=true

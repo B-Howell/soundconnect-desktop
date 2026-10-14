@@ -1,0 +1,27 @@
+.progress-dots__list {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-dots__dot {
+  width: var(--progress-dot-size);
+  height: var(--progress-dot-size);
+  border-radius: var(--radius-pill);
+  background: var(--fill);
+  transition: width var(--duration-base) var(--ease-out), background-color var(--duration-base) var(--ease-out);
+}
+
+/* Finished steps: the accent, quieter than the current one but clearly not "to do". */
+.progress-dots__dot[data-state="done"] {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* The current step: a wider accent pill, so position reads at a glance. */
+.progress-dots__dot[data-state="current"] {
+  width: var(--progress-dot-current-width);
+  background: var(--accent);
+}

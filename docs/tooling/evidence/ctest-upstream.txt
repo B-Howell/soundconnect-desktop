@@ -1,0 +1,17 @@
+Test project D:/a/soundconnect-desktop/soundconnect-desktop/build
+    Start 1: mdr-c-abi
+1/6 Test #1: mdr-c-abi ........................   Passed    0.02 sec
+    Start 2: WF-1000XM5-6.1.0
+2/6 Test #2: WF-1000XM5-6.1.0 .................   Passed    0.01 sec
+    Start 3: WF-LC900-2.0.3
+3/6 Test #3: WF-LC900-2.0.3 ...................   Passed    0.01 sec
+    Start 4: WF-LC900-2.0.3-equalizer
+4/6 Test #4: WF-LC900-2.0.3-equalizer .........   Passed    0.01 sec
+    Start 5: WF-LC900-2.0.3-listening
+5/6 Test #5: WF-LC900-2.0.3-listening .........   Passed    0.01 sec
+    Start 6: WH-1000XM3-4.5.2
+6/6 Test #6: WH-1000XM3-4.5.2 .................   Passed    0.01 sec
+
+100% tests passed out of 6
+
+Total Test time (real) =   0.12 sec

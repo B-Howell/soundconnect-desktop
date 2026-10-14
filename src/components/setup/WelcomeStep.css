@@ -1,0 +1,13 @@
+/* The PNG carries its own rounded square and gold border (as on About). */
+.welcome-step__icon {
+  display: block;
+  width: var(--setup-icon-size);
+  height: var(--setup-icon-size);
+}
+
+.welcome-step__note {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-align: center;
+}

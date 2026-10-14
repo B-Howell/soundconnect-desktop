@@ -1,0 +1,4 @@
+/* Same inset as SectionHeader and SectionFooter: a footnote, not a card. */
+.phone-only-note {
+  padding: 0 var(--space-4);
+}

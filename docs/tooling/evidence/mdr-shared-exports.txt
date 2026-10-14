@@ -1,0 +1,86 @@
+
+Dump of file out\mdr-shared.dll
+
+File Type: DLL
+
+  Section contains the following exports for mdr-shared.dll
+
+    00000000 characteristics
+    FFFFFFFF time date stamp
+        0.00 version
+           1 ordinal base
+          61 number of functions
+          61 number of names
+
+    ordinal hint RVA      name
+
+          1    0 0000C940 mdrConnectionConnect = mdrConnectionConnect
+          2    1 0000C960 mdrConnectionDisconnect = mdrConnectionDisconnect
+          3    2 0000C970 mdrConnectionFreeDevicesList = mdrConnectionFreeDevicesList
+          4    3 0000C990 mdrConnectionGetDevicesList = mdrConnectionGetDevicesList
+          5    4 0000C9B0 mdrConnectionGetLastError = mdrConnectionGetLastError
+          6    5 0000C9D0 mdrConnectionPoll = mdrConnectionPoll
+          7    6 0000C9F0 mdrConnectionRecv = mdrConnectionRecv
+          8    7 0000CA10 mdrConnectionSend = mdrConnectionSend
+          9    8 0000CA30 mdrHeadphonesCreate = mdrHeadphonesCreate
+         10    9 0000CAD0 mdrHeadphonesDestroy = mdrHeadphonesDestroy
+         11    A 0000CAF0 mdrHeadphonesGetAssignableControlActions = mdrHeadphonesGetAssignableControlActions
+         12    B 0000CB70 mdrHeadphonesGetAssignableControls = mdrHeadphonesGetAssignableControls
+         13    C 0000CBE0 mdrHeadphonesGetBatteries = mdrHeadphonesGetBatteries
+         14    D 0000CC30 mdrHeadphonesGetConnectionMode = mdrHeadphonesGetConnectionMode
+         15    E 0000CCA0 mdrHeadphonesGetEqualizer = mdrHeadphonesGetEqualizer
+         16    F 0000CCE0 mdrHeadphonesGetEqualizerBands = mdrHeadphonesGetEqualizerBands
+         17   10 0000CD30 mdrHeadphonesGetEqualizerPresets = mdrHeadphonesGetEqualizerPresets
+         18   11 0000CD80 mdrHeadphonesGetFeature = mdrHeadphonesGetFeature
+         19   12 0000CDF0 mdrHeadphonesGetGeneralSetting = mdrHeadphonesGetGeneralSetting
+         20   13 0000CE50 mdrHeadphonesGetGeneralSettingInfo = mdrHeadphonesGetGeneralSettingInfo
+         21   14 0000CEB0 mdrHeadphonesGetListening = mdrHeadphonesGetListening
+         22   15 0000CF40 mdrHeadphonesGetModel = mdrHeadphonesGetModel
+         23   16 0000CF80 mdrHeadphonesGetNoiseControl = mdrHeadphonesGetNoiseControl
+         24   17 0000D0B0 mdrHeadphonesGetPairedDevices = mdrHeadphonesGetPairedDevices
+         25   18 0000D100 mdrHeadphonesGetPairing = mdrHeadphonesGetPairing
+         26   19 0000D140 mdrHeadphonesGetPlayback = mdrHeadphonesGetPlayback
+         27   1A 0000D180 mdrHeadphonesGetPower = mdrHeadphonesGetPower
+         28   1B 0000D270 mdrHeadphonesGetSafeListening = mdrHeadphonesGetSafeListening
+         29   1C 0000D310 mdrHeadphonesGetSourceSwitchControl = mdrHeadphonesGetSourceSwitchControl
+         30   1D 0000D350 mdrHeadphonesGetSourceSwitchControlResult = mdrHeadphonesGetSourceSwitchControlResult
+         31   1E 0000D3E0 mdrHeadphonesGetSpeakToChat = mdrHeadphonesGetSpeakToChat
+         32   1F 0000D420 mdrHeadphonesGetText = mdrHeadphonesGetText
+         33   20 0000D4E0 mdrHeadphonesGetVoiceGuidance = mdrHeadphonesGetVoiceGuidance
+         34   21 0000D520 mdrHeadphonesGetWearingStatus = mdrHeadphonesGetWearingStatus
+         35   22 0000D5B0 mdrHeadphonesIsDirty = mdrHeadphonesIsDirty
+         36   23 0000D5E0 mdrHeadphonesIsInitialized = mdrHeadphonesIsInitialized
+         37   24 0000D610 mdrHeadphonesIsReady = mdrHeadphonesIsReady
+         38   25 0000D640 mdrHeadphonesPlayback = mdrHeadphonesPlayback
+         39   26 0000D6B0 mdrHeadphonesPoll = mdrHeadphonesPoll
+         40   27 0000D6E0 mdrHeadphonesRequestCommit = mdrHeadphonesRequestCommit
+         41   28 0000D760 mdrHeadphonesRequestInit = mdrHeadphonesRequestInit
+         42   29 0000D7E0 mdrHeadphonesRequestRespondToAlert = mdrHeadphonesRequestRespondToAlert
+         43   2A 0000D860 mdrHeadphonesRequestSync = mdrHeadphonesRequestSync
+         44   2B 0000D8E0 mdrHeadphonesSetAssignableControls = mdrHeadphonesSetAssignableControls
+         45   2C 0000D980 mdrHeadphonesSetConnectionMode = mdrHeadphonesSetConnectionMode
+         46   2D 0000DA80 mdrHeadphonesSetEqualizer = mdrHeadphonesSetEqualizer
+         47   2E 0000DB20 mdrHeadphonesSetEqualizerBands = mdrHeadphonesSetEqualizerBands
+         48   2F 0000DDB0 mdrHeadphonesSetGeneralSetting = mdrHeadphonesSetGeneralSetting
+         49   30 0000DE50 mdrHeadphonesSetListening = mdrHeadphonesSetListening
+         50   31 0000DF90 mdrHeadphonesSetNoiseControl = mdrHeadphonesSetNoiseControl
+         51   32 0000E1B0 mdrHeadphonesSetPacketCallback = mdrHeadphonesSetPacketCallback
+         52   33 0000E1E0 mdrHeadphonesSetPairedDevice = mdrHeadphonesSetPairedDevice
+         53   34 0000E4A0 mdrHeadphonesSetPairing = mdrHeadphonesSetPairing
+         54   35 0000E540 mdrHeadphonesSetPlayback = mdrHeadphonesSetPlayback
+         55   36 0000E5C0 mdrHeadphonesSetPower = mdrHeadphonesSetPower
+         56   37 0000E7C0 mdrHeadphonesSetSafeListening = mdrHeadphonesSetSafeListening
+         57   38 0000E8B0 mdrHeadphonesSetSourceSwitchControl = mdrHeadphonesSetSourceSwitchControl
+         58   39 0000E960 mdrHeadphonesSetSpeakToChat = mdrHeadphonesSetSpeakToChat
+         59   3A 0000EA00 mdrHeadphonesSetTimeout = mdrHeadphonesSetTimeout
+         60   3B 0000EA60 mdrHeadphonesSetVoiceGuidance = mdrHeadphonesSetVoiceGuidance
+         61   3C 0000EB00 mdrResultString = mdrResultString
+
+  Summary
+
+        1000 .data
+        5000 .pdata
+       2D000 .rdata
+        1000 .reloc
+        1000 .rsrc
+       60000 .text

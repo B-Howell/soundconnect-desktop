@@ -1,0 +1,35 @@
+# cmake --build engine/build --config RelWithDebInfo --target mdr_shared mdr-bt_shared mdr_replay_tests
+# CMake 4.4.4, generator Visual Studio 16 2019, MSVC 19.29.30151.0 (toolset 14.29.30133), 2026-10-11
+Microsoft (R) Build Engine version 16.11.2+f32259642 for .NET Framework
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+  Checking File Globs
+  1>Checking Build System
+  Building Custom Rule %USERPROFILE%/Documents/Projects/RE-SoundConnect/upstream/SonyHeadphonesClient/libmdr/include/CMakeLists.txt
+  Building Custom Rule %USERPROFILE%/Documents/Projects/RE-SoundConnect/upstream/SonyHeadphonesClient/libmdr/include/CMakeLists.txt
+  Building Custom Rule %USERPROFILE%/Documents/Projects/RE-SoundConnect/engine/build/_deps/fmt-src/CMakeLists.txt
+  format.cc
+  os.cc
+  Generating Code...
+  fmt.vcxproj -> %USERPROFILE%\Documents\Projects\RE-SoundConnect\engine\build\_deps\fmt-build\RelWithDebInfo\fmt.lib
+  Building Custom Rule %USERPROFILE%/Documents/Projects/RE-SoundConnect/upstream/SonyHeadphonesClient/libmdr/src/CMakeLists.txt
+  Command.cpp
+  Headphones.cpp
+  HeadphonesV1.cpp
+  HeadphonesV1T1.cpp
+  HeadphonesV1T2.cpp
+  HeadphonesV2.cpp
+  HeadphonesV2T1.cpp
+  HeadphonesV2T2.cpp
+  ProtocolV1T1Validation.cpp
+  ProtocolV1T2Validation.cpp
+  ProtocolV2T1Validation.cpp
+  ProtocolV2T2Validation.cpp
+  Generating Code...
+\libmdr\src\HeadphonesV2.cpp(1027): fatal error C1001: Internal compiler error. [%USERPROFILE%\Documents\Projects\RE-SoundConnect\engine\build\libmdr\src\mdr_shared.vcxproj]
+  (compiler file 'D:\a\_work\1\s\src\vctools\Compiler\Utc\src\p2\main.c', line 213)
+   To work around this problem, try simplifying or changing the program near the locations listed above.
+  If possible please provide a repro here: https://developercommunity.visualstudio.com
+  Please choose the Technical Support command on the Visual C++
+   Help menu, or open the Technical Support help file for more information
+# exit code: 1

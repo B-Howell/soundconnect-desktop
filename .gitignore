@@ -1,0 +1,13 @@
+# downloaded CI artifacts and first-run logs
+downloads/
+node_modules/
+dist/
+target/
+build/
+*.log
+.env
+engine/build/
+engine/bin/
+# TypeScript incremental build info (tsconfig.node.json is composite)
+*.tsbuildinfo
+.claude/

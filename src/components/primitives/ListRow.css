@@ -1,0 +1,106 @@
+.list-row__content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--row-min-height);
+  padding-left: var(--space-4);
+  text-align: start;
+}
+
+.list-row__content--pressable {
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.list-row__content--pressable:hover:not(:disabled) {
+  background: var(--control-hover);
+}
+
+.list-row__content--pressable:active:not(:disabled) {
+  background: var(--control-active);
+}
+
+.list-row__content--pressable:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+/* The card clips overflow, so the ring sits inside the row. */
+.list-row__content--pressable:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+  border-radius: var(--radius-sm);
+}
+
+.list-row__leading {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--row-icon-size);
+  color: var(--accent);
+}
+
+.list-row__leading svg {
+  width: var(--row-icon-size);
+  height: var(--row-icon-size);
+}
+
+/* The separator lives on this box, so it starts at the text edge. 1 px is a
+   literal hairline, not a token. Vertical padding is half of --space-3 so a
+   row holding a 31 px switch stays at the 44 px minimum, as on iOS. */
+.list-row__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--row-min-height);
+  padding: calc(var(--space-3) / 2) var(--space-4) calc(var(--space-3) / 2) 0;
+}
+
+.list-row + .list-row .list-row__main {
+  box-shadow: inset 0 1px 0 var(--separator);
+}
+
+.list-row__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.list-row__title {
+  font-size: var(--font-size-md);
+  line-height: var(--leading-tight);
+  color: var(--text);
+}
+
+.list-row__subtitle {
+  margin-top: var(--space-half);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-tight);
+  color: var(--text-secondary);
+}
+
+.list-row__trailing {
+  display: flex;
+  flex: none;
+  align-items: center;
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+}
+
+/* Glyph stroke weight (2.25 on the 24 grid) is set on the Icon: it is part of
+   the glyph's drawing, like the 1 px hairline, not a layout size. */
+.list-row__chevron,
+.list-row__check {
+  flex: none;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.list-row__chevron {
+  color: var(--text-tertiary);
+}
+
+.list-row__check {
+  color: var(--accent);
+}

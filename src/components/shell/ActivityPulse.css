@@ -1,0 +1,75 @@
+.activity-pulse {
+  --pulse-soft: var(--accent-soft);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--state-visual-size);
+  height: var(--state-visual-size);
+  flex: none;
+  color: var(--accent);
+}
+
+.activity-pulse[data-tone="warning"] {
+  --pulse-soft: var(--warning-soft);
+  color: var(--warning);
+}
+
+.activity-pulse__disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--pulse-soft);
+}
+
+/* A product photo sits in its own (larger) box, on top of the rings, with no disc behind it. */
+.activity-pulse[data-kind="image"] {
+  width: auto;
+  height: auto;
+}
+
+.activity-pulse__image {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.activity-pulse__glyph {
+  width: var(--state-glyph-size);
+  height: var(--state-glyph-size);
+}
+
+/* Rings start at the disc's edge and fade as they grow; the second is half a
+   breath behind, so one is always on its way out. */
+.activity-pulse__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--pulse-soft);
+  animation: activity-pulse var(--duration-pulse) var(--ease-out) infinite;
+}
+
+.activity-pulse__ring--late {
+  animation-delay: calc(var(--duration-pulse) / 2);
+}
+
+@keyframes activity-pulse {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* No motion at all, rather than the global rule's single 0.01 ms frame. */
+@media (prefers-reduced-motion: reduce) {
+  .activity-pulse__ring {
+    display: none;
+  }
+}

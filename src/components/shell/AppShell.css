@@ -1,0 +1,7 @@
+/* The page region passes the page column's flex through, so a page child
+   with `flex: 1` (a connection state) still fills the visible height. */
+.app-shell__page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

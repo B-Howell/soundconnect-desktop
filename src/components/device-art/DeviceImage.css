@@ -1,0 +1,7 @@
+/* The photo keeps its own proportions inside the square box; nothing alters its pixels. */
+.device-image {
+  flex: none;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+}

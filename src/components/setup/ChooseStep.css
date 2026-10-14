@@ -1,0 +1,9 @@
+.choose-step__message {
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--font-size-md);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-align: center;
+}

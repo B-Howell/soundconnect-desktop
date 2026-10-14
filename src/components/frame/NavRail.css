@@ -1,0 +1,43 @@
+/* Full window height (it spans the title-bar row), on the sidebar surface
+   with a hairline against the content (1 px, the literal hairline). */
+.nav-rail {
+  display: flex;
+  flex-direction: column;
+  width: var(--rail-width);
+  min-height: 0;
+  background: var(--sidebar-bg);
+  box-shadow: inset -1px 0 0 var(--sidebar-edge);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.nav-rail--collapsed {
+  width: var(--rail-width-collapsed);
+}
+
+.nav-rail__strip {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: var(--titlebar-height);
+  padding: 0 var(--space-5);
+}
+
+.nav-rail__wordmark {
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  /* Brand wordmark in gold (bronze in light); --accent-text keeps 13 px text above 4.5:1. */
+  color: var(--accent-text);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.nav-rail__device {
+  padding: var(--space-2) var(--space-3) var(--space-4);
+}
+
+.nav-rail__nav {
+  padding: 0 var(--space-3) var(--space-4);
+}

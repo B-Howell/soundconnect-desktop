@@ -1,0 +1,4 @@
+/* Clips the content while the height animates. */
+.reveal {
+  overflow: hidden;
+}
