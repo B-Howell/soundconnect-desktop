@@ -4,7 +4,7 @@ import type { Change, SettingsPage } from "../../lib/winaudio/types";
 import { ListRow } from "../primitives/ListRow";
 import { TextButton } from "../primitives/TextButton";
 import { Toggle } from "../primitives/Toggle";
-import { RowSubtitle, RowTitle } from "./RowText";
+import { RowSubtitle, RowTitle, RowValue } from "./RowText";
 import { WinAudioPickerRow } from "./WinAudioPickerRow";
 
 export interface WinAudioSettingRowProps {
@@ -18,8 +18,9 @@ export interface WinAudioSettingRowProps {
 
 /**
  * One Windows audio setting: title (shield when admin), plain sentence,
- * live and recommended state, and its control: a switch, a picker, a one-tap
- * action ("Use headphones"), "Open in Windows" for read-only settings, or none.
+ * "Recommended: …" only when the live state differs, then the live state and
+ * its control on the right: a switch, a picker, "Open" for a setting only
+ * Windows Settings can change, or the value alone for a fact.
  */
 export function WinAudioSettingRow({ row, onChange, onOpenSettings, busy = false }: WinAudioSettingRowProps) {
   const titleId = useId();
@@ -27,21 +28,21 @@ export function WinAudioSettingRow({ row, onChange, onOpenSettings, busy = false
   if (control.type === "picker") {
     return <WinAudioPickerRow row={row} control={control} onChange={onChange} disabled={busy} />;
   }
-  const trailing =
-    control.type === "toggle" ? (
-      <Toggle
-        checked={control.checked}
-        labelledBy={titleId}
-        disabled={busy || control.disabled}
-        onChange={(checked) => onChange(control.change(checked))}
-      />
-    ) : control.type === "action" ? (
-      <TextButton emphasized disabled={busy} onPress={() => onChange(control.change)}>
-        {control.label}
-      </TextButton>
-    ) : control.type === "openSettings" ? (
-      <TextButton onPress={() => onOpenSettings(control.page)}>Open in Windows</TextButton>
-    ) : undefined;
+  const trailing = (
+    <>
+      <RowValue value={row.current} />
+      {control.type === "toggle" ? (
+        <Toggle
+          checked={control.checked}
+          labelledBy={titleId}
+          disabled={busy || control.disabled}
+          onChange={(checked) => onChange(control.change(checked))}
+        />
+      ) : control.type === "openSettings" ? (
+        <TextButton onPress={() => onOpenSettings(control.page)}>Open</TextButton>
+      ) : null}
+    </>
+  );
   return (
     <ListRow
       title={<RowTitle row={row} />}

@@ -6,6 +6,14 @@ GitHub Release notes.
 
 ## Unreleased
 
+- **Windows audio page redesigned**: a choice between **Stereo audio**
+  (games, music and video; headphone mic off) and **Mono audio with mic**
+  (voice chat and calls through the headphone mic) replaces "Fix for music"
+  and "Fix for calls". Picking a mode still previews every change first. The
+  other settings sit in three plain cards (Processing, Format and volume,
+  Connection) that show a recommendation only when something differs, and
+  Restore moved under "Advanced". "Mono audio" is now "Mono mix
+  (accessibility)" so it is not confused with the mode.
 - Public README with screenshots, install guide and credits; CONTRIBUTING
   guide; tag-driven release workflow.
 - Settings and the remembered device are now stored in a new folder

@@ -20,7 +20,7 @@ in a desktop interface modelled on Sony's Sound Connect phone app.
 | ![Sound overview](docs/readme/soundconnect-sound-dark.png) | ![Equalizer](docs/readme/soundconnect-equalizer-dark.png) |
 | **Sound**: equalizer, noise control, connection quality and Speak-to-Chat at a glance | **Equalizer**: presets with their recorded curves, five bands and Clear Bass, DSEE |
 | ![Noise control](docs/readme/soundconnect-noise-control-dark.png) | ![Windows audio](docs/readme/soundconnect-windows-audio-dark.png) |
-| **Noise control**: the 22-stop ambient sound slider and the custom button | **Windows audio**: how Windows treats the headphones, with Fix for music and Fix for calls |
+| **Noise control**: the 22-stop ambient sound slider and the custom button | **Windows audio**: choose stereo audio or mono audio with mic, and see how Windows treats the headphones |
 
 ## Why
 
@@ -47,10 +47,11 @@ Grouped the way the app's left rail is:
 - **System**: touch sensor control panel, automatic pause when the
   headphones are taken off, auto power off, voice guidance, power off.
 - **Devices**: multipoint, the list of paired devices, pairing a new device.
-- **Windows audio**: how Windows routes and processes the headphones' sound
-  (Hands-Free, default devices, format, exclusive mode, absolute volume,
-  enhancements, codec, adapter power saving), with one-click "Fix for music",
-  "Fix for calls" and restore. Admin-only changes are marked and run through
+- **Windows audio**: one choice between "Stereo audio" (games, music,
+  video; headphone mic off) and "Mono audio with mic" (voice chat through the
+  headphone mic), previewed before anything changes; then how Windows
+  processes and carries the sound (enhancements, format, exclusive mode,
+  ducking, absolute volume, codec, adapter power saving), with restore. Admin-only changes are marked and run through
   an elevated helper.
 - **Settings**: connect automatically, set up or forget headphones, theme,
   start with Windows (optionally minimized), keep running in the tray, about

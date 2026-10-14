@@ -10,7 +10,7 @@ export interface RestorePointState {
 }
 
 /**
- * The saved pre-fix state. Re-read whenever `version` changes (pass the last
+ * The state saved before SoundConnect's first change. Re-read whenever `version` changes (pass the last
  * apply's results: the first apply saves it); `onDone` refreshes the page
  * after a restore.
  */

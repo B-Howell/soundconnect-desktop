@@ -2817,37 +2817,84 @@ adjusted.
 
 ## Windows audio page
 
-Task 28. A rail page, "Windows audio" (`speaker` icon, after Devices), over
-the `winaudio` crate ([Windows Audio](<../core/SoundConnect Desktop - Windows Audio.md>)),
-laid out as the research note proposed: a summary card across the top, then
-Calls vs music and Processing on the left, Format and volume and Connection
-on the right.
+Task 28 built it; Task 31 (0.1.9) redesigned it. A rail page, "Windows
+audio" (`speaker` icon, after Devices), over the `winaudio` crate
+([Windows Audio](<../core/SoundConnect Desktop - Windows Audio.md>)).
+
+Why the redesign: the maintainer, 2026-10-14, plays video games mainly and
+wants stereo then, so the page should offer a choice between stereo audio
+and mono audio with mic rather than "calls vs music", and found the old
+layout ugly even though every setting was there. So the old "Calls vs
+music" card and the "Fix for music" / "Fix for calls" buttons became one
+mode choice, and the rest regrouped into three plain cards.
+
+Layout, top to bottom:
+
+1. **Mode tiles** across both columns: two equal-height
+   [ChoiceTile](<../../src/components/primitives/ChoiceTile.tsx>)s
+   ([ChoiceTile.css](<../../src/components/primitives/ChoiceTile.css>)),
+   "Stereo audio" (headphones glyph: "Games, music and video. Full quality,
+   headphone mic off.") and "Mono audio with mic" (chat glyph: "Voice chat
+   and calls through the headphone mic. Windows drops to mono call
+   quality."). The current one has the 2 px gold edge and a filled gold
+   check disc; the other an empty ring. Each tile is a button with
+   `aria-pressed`, not a radio, because pressing the other one opens the
+   preview instead of switching at once; pressing the current one does
+   nothing. Under them a status line: "Currently: Stereo audio" (or "Mono
+   audio with mic"), and with drift a warning pill "Needs attention (n)" plus
+   "Review", which previews the current mode's plan.
+2. The last apply's outcome and the not-connected notice, also full width.
+3. **Processing** (Audio enhancements, Spatial sound with "Open", Mono mix
+   (accessibility), renamed from "Mono audio" so it is not mistaken for the
+   mode) and **Format and volume** (Default format, Exclusive mode, Lower
+   other sounds during calls, Absolute volume) in the left column;
+   **Connection** (Codec reported by headphones, Adapter power saving with
+   the adapter's name in its sentence, Bluetooth service, 2.4 GHz Wi-Fi) and
+   **Advanced** in the right.
+4. **Advanced**: a section-header-sized disclosure, closed by default, with
+   "Restore previous settings" (opens the confirm sheet; without a restore
+   point the row is plain text saying nothing is saved yet), "Forget restore
+   point" (only with one) and "Open Windows Sound settings".
+
+Every row is title (admin rows keep the shield), one plain sentence, then on
+the right the live state as secondary text and its control (switch, picker
+chevron, "Open", or the value alone). "Recommended: Off" appears as a small
+warning caption under the sentence only when the live state differs, instead
+of the old always-on "Now / Recommended" line. The old per-row Hands-Free,
+default playback, playback for calls and microphone for calls rows are gone:
+the mode tiles and the preview own them, and their drift counts toward
+"Needs attention". The Windows volume and Bluetooth adapter (name only) rows
+were dropped as facts nobody acts on here.
 
 Data and pure logic ([src/lib/winaudio](<../../src/lib/winaudio>)):
 
 - [types.ts](<../../src/lib/winaudio/types.ts>) mirrors the crate's serde
-  model (`WinAudioSnapshot`, `Change`, `ChangeResult`, `Plan`) and
-  `needsAdmin`, the same three admin kinds as `Change::needs_admin`.
+  model (`WinAudioSnapshot`, `Change`, `ChangeResult`, `Plan`, `FixKind` =
+  `"stereo" | "monoMic"`) and `needsAdmin`, the same three admin kinds as
+  `Change::needs_admin`.
 - [api.ts](<../../src/lib/winaudio/api.ts>): `WinAudioApi`, one method per
-  `winaudio_*` command, and `tauriWinAudioApi`.
+  `winaudio_*` command, and `tauriWinAudioApi`. `fixPreset("stereo" |
+  "monoMic")` goes straight to the renamed crate kinds.
 - [mockApi.ts](<../../src/lib/winaudio/mockApi.ts>): serves the snapshot
   recorded on the maintainer's PC and the crate's plans for it
   ([test-pc.json](<../../src-tauri/fixtures/winaudio/test-pc.json>),
-  [plan-music.json](<../../src-tauri/fixtures/winaudio/plan-music.json>),
-  [plan-calls.json](<../../src-tauri/fixtures/winaudio/plan-calls.json>)),
-  applies changes to a copy, reports a change the recording cannot express
-  (Hands-Free endpoints) as failed like the crate, keeps the restore point in
-  memory and records every batch.
+  [plan-stereo.json](<../../src-tauri/fixtures/winaudio/plan-stereo.json>),
+  [plan-mono-mic.json](<../../src-tauri/fixtures/winaudio/plan-mono-mic.json>),
+  regenerated with the crate's `fix_plan` example), applies changes to a
+  copy, reports a change the recording cannot express (hands-free endpoints)
+  as failed like the crate, keeps the restore point in memory and records
+  every batch.
 - [index.ts](<../../src/lib/winaudio/index.ts>): `getWinAudioApi`, the mock
   whenever the engine is mocked (`isMockEngine`), loaded by dynamic import.
-- [rows.ts](<../../src/lib/winaudio/rows.ts>): `winAudioCards(snapshot)`, the
-  four cards of rows. Each row: title, one plain sentence, `current`,
-  `recommended`, `ok` (true / false / null when there is no single answer or
-  it cannot be known, such as default playback while the headphones are not
-  connected), `counts` (toward "Needs attention"; advisory rows such as power
-  saving, format, exclusive mode and 2.4 GHz Wi-Fi do not), `admin`, and a
-  control (`toggle`, `picker`, `action` "Use headphones", `openSettings` for
-  spatial sound, or none) that yields the `Change`. `attentionCount`.
+- [rows.ts](<../../src/lib/winaudio/rows.ts>): `audioMode(snapshot)` (the
+  hands-free profile on means "Mono audio with mic"), `MODE_LABELS`,
+  `modeDrift(snapshot, mode)` (plain lines for what the mode's plan would put
+  right: in stereo, the headphones not the default or calls playback while
+  connected, or a headphone mic as a default; in mono with mic, voice chat
+  not on the hands-free endpoints once Windows lists them),
+  `winAudioCards(snapshot)` (the three cards; each row has title, sentence,
+  `current`, `recommended`, `ok`, `counts`, `admin` and a control that
+  yields the `Change`), and `attentionCount(cards, drift)`.
 
 Hooks ([src/hooks/winaudio](<../../src/hooks/winaudio>)), each one job:
 [useWinAudioTarget](<../../src/hooks/winaudio/useWinAudioTarget.ts>) (address
@@ -2857,58 +2904,79 @@ snapshot), [useWinAudioApi](<../../src/hooks/winaudio/useWinAudioApi.ts>),
 (read on mount, on window focus and every 10 s; newest read wins),
 [useApplyChanges](<../../src/hooks/winaudio/useApplyChanges.ts>) (admin
 changes first, then user ones, then refresh; keeps the results),
-[usePlanPreview](<../../src/hooks/winaudio/usePlanPreview.ts>) (fetch the
-plan, preview, apply exactly it),
+[usePlanPreview](<../../src/hooks/winaudio/usePlanPreview.ts>) (fetch a
+mode's plan, preview, apply exactly it),
 [useRestorePoint](<../../src/hooks/winaudio/useRestorePoint.ts>), and
 [useWindowsAudioPage](<../../src/hooks/winaudio/useWindowsAudioPage.ts>),
-which wires them into the page's view (`noDevice`, `loading`, `ready`).
+which wires them into the page's view (`noDevice`, `loading`, `ready` with
+`mode`, `cards`, `advanced`, the sheets and the outcome).
 
 Components ([src/components/winaudio](<../../src/components/winaudio>)):
 [WinAudioSections](<../../src/components/winaudio/WinAudioSections.tsx>)
-(composition), [WinAudioSummary](<../../src/components/winaudio/WinAudioSummary.tsx>)
-(pill "Set up for music" / "Needs attention (n)", Fix for music, Fix for
-calls, Restore and Forget restore point once a restore point exists),
+(composition and the column split),
+[AudioModeSwitch](<../../src/components/winaudio/AudioModeSwitch.tsx>)
+([AudioModeSwitch.css](<../../src/components/winaudio/AudioModeSwitch.css>);
+the two tiles, the status line, Review),
 [WinAudioCard](<../../src/components/winaudio/WinAudioCard.tsx>),
 [WinAudioSettingRow](<../../src/components/winaudio/WinAudioSettingRow.tsx>)
-(switch, action or "Open in Windows"),
+(value plus switch, "Open", or value alone),
 [WinAudioPickerRow](<../../src/components/winaudio/WinAudioPickerRow.tsx>)
-(the row opens an `OptionList` sheet),
-[RowText](<../../src/components/winaudio/RowText.tsx>) (title with shield,
-sentence), [RowStatus](<../../src/components/winaudio/RowStatus.tsx>) ("Now"
-and "Recommended" with a check or a warning dot, and spoken "differs from the
-recommendation"), [AdminShield](<../../src/components/winaudio/AdminShield.tsx>)
-(drawn locally, spoken "needs a Windows permission prompt"),
+(value plus chevron; the row opens an `OptionList` sheet),
+[RowText](<../../src/components/winaudio/RowText.tsx>) /
+[RowText.css](<../../src/components/winaudio/RowText.css>) (title with
+shield, sentence, the trailing value),
+[RecommendedNote](<../../src/components/winaudio/RecommendedNote.tsx>)
+([RecommendedNote.css](<../../src/components/winaudio/RecommendedNote.css>);
+the warning dot and "Recommended: …", text so colour is not the only cue),
+[AdminShield](<../../src/components/winaudio/AdminShield.tsx>) (drawn
+locally, spoken "needs a Windows permission prompt"),
+[WinAudioAdvanced](<../../src/components/winaudio/WinAudioAdvanced.tsx>)
+([WinAudioAdvanced.css](<../../src/components/winaudio/WinAudioAdvanced.css>);
+the disclosure over the shared `useDisclosure`),
 [PlanPreviewSheet](<../../src/components/winaudio/PlanPreviewSheet.tsx>)
-(lists exactly the plan's sentences, a shield on admin items, "Windows will
-ask for permission once for the items marked with a shield", the plan's
-notes; Cancel focused; "Nothing to change." with only Close),
+("Switch to Stereo audio" / "Switch to Mono audio with mic": exactly the
+plan's sentences, a shield on admin items, "Windows will ask for permission
+once for the items marked with a shield", the plan's notes; Cancel focused;
+"Nothing to change." with only Close),
 [RestoreSheet](<../../src/components/winaudio/RestoreSheet.tsx>) and
 [ApplyResultNote](<../../src/components/winaudio/ApplyResultNote.tsx>)
 (one line per change that did not take, with Windows' reason, else "n changes
-applied and checked."). The page is
-[WindowsAudioPage.tsx](<../../src/pages/WindowsAudioPage.tsx>); with no
-remembered headphones it shows a placeholder, and with the headphones not
-connected to Windows it still works and says so above the cards. The rail
+applied and checked."). `WinAudioSummary` and `RowStatus` were deleted. The
+page is [WindowsAudioPage.tsx](<../../src/pages/WindowsAudioPage.tsx>); with
+no remembered headphones it shows a placeholder, and with the headphones not
+connected to Windows it still works and says so under the tiles. The rail
 entry is in [navPages.ts](<../../src/components/frame/navPages.ts>),
 [navStore.ts](<../../src/state/navStore.ts>) and
 [AppShell.tsx](<../../src/components/shell/AppShell.tsx>).
 
-Tests: [rows.test.ts](<../../tests/winaudio/rows.test.ts>) (cards and row
-states on the recording, attention 0 there, attention 4 once connected with
-enhancements on and ducking at 80 %, controls' changes, the mock's apply) and
+Tests: [rows.test.ts](<../../tests/winaudio/rows.test.ts>) (the three cards
+and renamed rows in order, live states on the recording, stereo mode with
+attention 0, mono with mic when hands-free is on, drift once connected and
+attention 4 with enhancements and ducking, a headphone mic as default in
+stereo, voice chat off the hands-free endpoints in mono with mic, controls'
+changes, the mock's apply) and
 [WindowsAudioPage.test.tsx](<../../tests/winaudio/WindowsAudioPage.test.tsx>)
-(rows show now / recommended, shields only on the three admin rows, a switch
-applies its one change and the summary turns to "Needs attention (1)" with
-Restore offered, Fix for calls previews the two recorded changes with the
-prompt note and applies admin first then user, an empty plan offers only
-Close); the rail tests now list eight pages.
+(the current tile is pressed and named in the status line, for both modes;
+renamed rows with "Recommended" only where the state differs; shields only
+on admin rows; a switch applies its one change and the status line turns to
+"Needs attention (1)"; choosing "Mono audio with mic" calls
+`fixPreset("monoMic")`, previews the two recorded changes with the prompt
+note, applies admin first then user, and the mono tile becomes current;
+pressing the current tile does nothing while Review previews the stereo plan;
+Restore lives in the closed Advanced disclosure and appears once a restore
+point exists; an empty plan offers only Close). The crate's
+`fix_kinds_are_stereo_and_mono_mic_and_accept_the_old_names` covers the
+renamed kinds.
 
 Screenshots (headless Edge over CDP against the dev server with the mock,
-1180 x 760): (screenshot removed before publication),
-(screenshot removed before publication),
-(screenshot removed before publication)
-(the preview sheet). Judged: rows align on the card's text edge, the status
-line wraps under long device names without truncation, the shield sits on
-the title's baseline, the two fix buttons share the width. Not verified:
-the page inside the real Tauri window against live Windows (only the crate's
-read and the enhancements round trip ran live).
+reduced motion so switches are not caught mid-slide):
+![Windows audio, dark, 1180 x 760](<screenshots/task31-winaudio-dark.png>),
+![Windows audio, light, 1180 x 760](<screenshots/task31-winaudio-light.png>),
+![Windows audio, 960 x 620 with the rail collapsed](<screenshots/task31-winaudio-narrow.png>),
+![The preview sheet for Mono audio with mic](<screenshots/task31-winaudio-preview-sheet.png>).
+Judged: the tiles are equal height and share the card grid's 24 px gutter;
+the gold edge and check read in both themes; section labels, row text and
+the status line sit on the cards' 16 px text edge; values and controls align
+on the right; "Recommended" shows only on adapter power saving (the
+recording's one difference). Not verified: the page inside the real Tauri
+window against live Windows.

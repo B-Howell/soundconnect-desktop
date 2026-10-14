@@ -9,7 +9,7 @@ import type { Change, ChangeResult, FixKind, Plan, SettingsPage, WinAudioSnapsho
 export interface WinAudioApi {
   /** `winaudio_snapshot`: the state for the headphones at `address`; `codec` is echoed. */
   snapshot(address: string, codec: string | null): Promise<WinAudioSnapshot>;
-  /** `winaudio_fix_preset`: what a fix would change, for the preview. */
+  /** `winaudio_fix_preset`: what switching to a mode would change, for the preview. */
   fixPreset(kind: FixKind, address: string, codec: string | null): Promise<Plan>;
   /** `winaudio_apply`: user-level changes, each read back. */
   apply(address: string, changes: Change[]): Promise<ChangeResult[]>;
@@ -17,7 +17,7 @@ export interface WinAudioApi {
   applyAdmin(address: string, changes: Change[]): Promise<ChangeResult[]>;
   /** `winaudio_restore`: puts the restore point back. */
   restore(codec: string | null): Promise<ChangeResult[]>;
-  /** `winaudio_restore_point`: the saved pre-fix state, if any. */
+  /** `winaudio_restore_point`: the state saved before the first change, if any. */
   restorePoint(): Promise<WinAudioSnapshot | null>;
   /** `winaudio_forget_restore_point` */
   forgetRestorePoint(): Promise<void>;

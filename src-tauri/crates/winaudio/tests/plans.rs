@@ -86,19 +86,19 @@ fn recording_matches_the_research_facts() {
 }
 
 #[test]
-fn music_on_the_recording_changes_nothing_while_not_connected() {
+fn stereo_on_the_recording_changes_nothing_while_not_connected() {
     let s = recorded();
     assert_eq!(stereo(&s).state, EndpointState::Unplugged);
-    let plan = fix_plan(FixKind::Music, &s);
+    let plan = fix_plan(FixKind::Stereo, &s);
     assert!(plan.changes.is_empty(), "{:?}", plan.changes);
     assert_eq!(plan.notes, vec![NOTE_NOT_CONNECTED.to_string()]);
 }
 
 #[test]
-fn music_when_connected_makes_the_headphones_default_for_playback_and_calls() {
+fn stereo_when_connected_makes_the_headphones_default_for_playback_and_calls() {
     let s = connected();
     let id = stereo(&s).id;
-    let plan = fix_plan(FixKind::Music, &s);
+    let plan = fix_plan(FixKind::Stereo, &s);
     assert_eq!(
         changes(&plan),
         vec![
@@ -124,7 +124,7 @@ fn music_when_connected_makes_the_headphones_default_for_playback_and_calls() {
 }
 
 #[test]
-fn music_undoes_what_windows_or_a_call_setup_turned_on() {
+fn stereo_undoes_what_windows_or_a_call_setup_turned_on() {
     let mut s = connected();
     let st = stereo(&s);
     s.default_render = Some(as_default(&st));
@@ -145,7 +145,7 @@ fn music_undoes_what_windows_or_a_call_setup_turned_on() {
     s.hands_free_capture = Some(mic.clone());
     s.default_communications_capture = Some(as_default(&mic));
 
-    let plan = fix_plan(FixKind::Music, &s);
+    let plan = fix_plan(FixKind::Stereo, &s);
     let snowball = s.capture_endpoints[0].clone();
     assert_eq!(snowball.name, "Snowball (Blue Snowball)");
     assert_eq!(
@@ -182,9 +182,9 @@ fn music_undoes_what_windows_or_a_call_setup_turned_on() {
 }
 
 #[test]
-fn calls_on_the_recording_turns_hands_free_on_then_uses_it() {
+fn mono_mic_on_the_recording_turns_hands_free_on_then_uses_it() {
     let s = recorded();
-    let plan = fix_plan(FixKind::Calls, &s);
+    let plan = fix_plan(FixKind::MonoMic, &s);
     assert_eq!(
         changes(&plan),
         vec![
@@ -199,7 +199,7 @@ fn calls_on_the_recording_turns_hands_free_on_then_uses_it() {
     );
     assert_eq!(
         plan.changes[0].summary,
-        "Turn Hands-Free (mono call audio) on."
+        "Turn the hands-free profile (headphone mic, mono sound) on."
     );
     assert!(plan.changes[0].admin && !plan.changes[1].admin);
     assert_eq!(plan.notes, vec![NOTE_CALLS_MONO.to_string()]);
@@ -281,4 +281,17 @@ fn raw_values_decode_like_windows() {
         Some("AABBCC123456")
     );
     assert_eq!(winaudio::address_hex("not an address"), None);
+}
+
+#[test]
+fn fix_kinds_are_stereo_and_mono_mic_and_accept_the_old_names() {
+    for (json, kind) in [
+        ("\"stereo\"", FixKind::Stereo),
+        ("\"monoMic\"", FixKind::MonoMic),
+        ("\"music\"", FixKind::Stereo),
+        ("\"calls\"", FixKind::MonoMic),
+    ] {
+        assert_eq!(serde_json::from_str::<FixKind>(json).expect(json), kind);
+    }
+    assert_eq!(serde_json::to_string(&FixKind::MonoMic).unwrap(), "\"monoMic\"");
 }

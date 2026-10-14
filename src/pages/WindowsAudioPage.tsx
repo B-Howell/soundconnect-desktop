@@ -3,9 +3,9 @@ import { WinAudioSections } from "../components/winaudio/WinAudioSections";
 import { useWindowsAudioPage } from "../hooks/winaudio/useWindowsAudioPage";
 
 /**
- * Windows audio: how Windows handles the headphones' sound (Hands-Free,
- * default devices, effects, format, absolute volume, the radio), with
- * "Fix for music", "Fix for calls" and Restore. Works for the remembered
+ * Windows audio: the choice between "Stereo audio" and "Mono audio with
+ * mic", then how Windows processes, formats and carries the headphones'
+ * sound, with Restore under Advanced. Works for the remembered
  * headphones while they are not connected.
  */
 export function WindowsAudioPage() {

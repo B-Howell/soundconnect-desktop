@@ -1,6 +1,6 @@
 /**
  * A `WinAudioApi` without Windows, for the browser (`VITE_MOCK_ENGINE=1`) and
- * tests. It serves the snapshot recorded on the maintainer's PC and the fix plans the
+ * tests. It serves the snapshot recorded on the maintainer's PC and the mode plans the
  * crate built for it (`src-tauri/fixtures/winaudio/`), applies changes to a
  * local copy (each reported verified, as the crate's read-back would), and
  * keeps the restore point in memory. Admin changes resolve after `adminMs`

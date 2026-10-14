@@ -9,7 +9,7 @@ export interface RestoreSheetProps {
   onClose: () => void;
 }
 
-/** Confirms "Restore": puts back the Windows settings saved before the first fix. Cancel is focused. */
+/** Confirms "Restore": puts back the Windows settings saved before the first change. Cancel is focused. */
 export function RestoreSheet({ open, onConfirm, onClose }: RestoreSheetProps) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
@@ -17,7 +17,7 @@ export function RestoreSheet({ open, onConfirm, onClose }: RestoreSheetProps) {
       open={open}
       onClose={onClose}
       title="Restore Windows settings?"
-      message="Puts back what these settings were before SoundConnect first changed them. Windows may ask for permission for Hands-Free, absolute volume or the adapter."
+      message="Puts back what these settings were before SoundConnect first changed them. Windows may ask for permission for the hands-free profile, absolute volume or the adapter."
       initialFocus={cancel}
     >
       <SheetActions>

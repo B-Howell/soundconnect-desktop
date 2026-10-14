@@ -258,7 +258,7 @@ impl Change {
                 format!("Make {name} the {what}.")
             }
             Self::UseHandsFreeForCommunications { .. } => {
-                "Use the headphones' Hands-Free audio and microphone for calls.".into()
+                "Use the headphones' hands-free audio and microphone for voice chat and calls.".into()
             }
             Self::SetEnhancements { enabled, .. } => {
                 format!("Turn audio enhancements {}.", on_off(*enabled))
@@ -283,7 +283,10 @@ impl Change {
             }
             Self::SetMonoAudio { enabled } => format!("Turn mono audio {}.", on_off(*enabled)),
             Self::SetHandsFree { enabled, .. } => {
-                format!("Turn Hands-Free (mono call audio) {}.", on_off(*enabled))
+                format!(
+                    "Turn the hands-free profile (headphone mic, mono sound) {}.",
+                    on_off(*enabled)
+                )
             }
             Self::SetAbsoluteVolumeDisabled { disabled } => {
                 format!("Turn absolute volume {}.", on_off(!*disabled))
@@ -334,12 +337,16 @@ impl ChangeResult {
     }
 }
 
-/// "Fix for music" or "Fix for calls".
+/// The page's two modes: "Stereo audio" (games, music, video; headphone mic
+/// off) or "Mono audio with mic" (the hands-free profile for voice chat).
+/// The 0.1.6 to 0.1.8 names `music` / `calls` are still accepted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FixKind {
-    Music,
-    Calls,
+    #[serde(alias = "music")]
+    Stereo,
+    #[serde(alias = "calls")]
+    MonoMic,
 }
 
 /// A change with its preview sentence.

@@ -1,5 +1,5 @@
-//! Pure plan builders: what "Fix for music", "Fix for calls" and "Restore"
-//! would change, from snapshots. No Windows calls, so they are tested on the
+//! Pure plan builders: what switching to "Stereo audio" or "Mono audio with
+//! mic", and "Restore", would change, from snapshots. No Windows calls, so they are tested on the
 //! recorded snapshot of the maintainer's PC.
 
 use crate::model::{
@@ -10,13 +10,13 @@ use crate::model::{
 /// Shown when spatial sound reads as on; Windows has no supported setter.
 pub const NOTE_SPATIAL: &str =
     "Spatial sound is on. Turn it off in Windows Settings > Sound > the headphones.";
-/// Shown with "Fix for calls".
+/// Shown with "Mono audio with mic".
 pub const NOTE_CALLS_MONO: &str =
-    "Music will be mono, call quality, while a call app uses the headphone mic.";
+    "All sound will be mono, call quality, while an app uses the headphone mic.";
 /// Shown when Hands-Free is needed but the headphones do not offer it.
 pub const NOTE_NO_HANDS_FREE: &str =
     "These headphones do not offer Hands-Free to this PC, so their mic cannot be used for calls.";
-/// Shown when music mode has to move the mic off the headphones but no other mic exists.
+/// Shown when stereo mode has to move the mic off the headphones but no other mic exists.
 pub const NOTE_NO_OTHER_MIC: &str =
     "No other microphone was found. Calls will have no microphone while Hands-Free is off.";
 /// Shown when the stereo endpoint is not active, so defaults cannot point at it.
@@ -30,12 +30,12 @@ fn needs_default(current: Option<&DefaultEndpoint>, id: &str) -> bool {
 /// The plan for `kind` against `snap`: only what differs from the target.
 pub fn fix_plan(kind: FixKind, snap: &WinAudioSnapshot) -> Plan {
     match kind {
-        FixKind::Music => music_plan(snap),
-        FixKind::Calls => calls_plan(snap),
+        FixKind::Stereo => stereo_plan(snap),
+        FixKind::MonoMic => mono_mic_plan(snap),
     }
 }
 
-fn music_plan(snap: &WinAudioSnapshot) -> Plan {
+fn stereo_plan(snap: &WinAudioSnapshot) -> Plan {
     let mut changes: Vec<Change> = Vec::new();
     let mut notes: Vec<String> = Vec::new();
 
@@ -117,7 +117,7 @@ fn music_plan(snap: &WinAudioSnapshot) -> Plan {
     plan(changes, notes)
 }
 
-fn calls_plan(snap: &WinAudioSnapshot) -> Plan {
+fn mono_mic_plan(snap: &WinAudioSnapshot) -> Plan {
     let mut changes: Vec<Change> = Vec::new();
     let mut notes: Vec<String> = Vec::new();
     if !snap.hands_free_offered {

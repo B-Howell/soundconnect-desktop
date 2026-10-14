@@ -1,12 +1,12 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import monoMicPlan from "../../src-tauri/fixtures/winaudio/plan-mono-mic.json";
+import stereoPlan from "../../src-tauri/fixtures/winaudio/plan-stereo.json";
 import recording from "../../src-tauri/fixtures/winaudio/test-pc.json";
-import callsPlan from "../../src-tauri/fixtures/winaudio/plan-calls.json";
-import musicPlan from "../../src-tauri/fixtures/winaudio/plan-music.json";
 import { PlanPreviewSheet, ADMIN_PROMPT_NOTE } from "../../src/components/winaudio/PlanPreviewSheet";
 import { createMockWinAudioApi, type MockWinAudioApi } from "../../src/lib/winaudio/mockApi";
-import type { Plan, WinAudioSnapshot } from "../../src/lib/winaudio/types";
+import type { FixKind, Plan, WinAudioSnapshot } from "../../src/lib/winaudio/types";
 import { WindowsAudioPage } from "../../src/pages/WindowsAudioPage";
 
 const ADDRESS = "AA:BB:CC:12:34:56";
@@ -17,44 +17,76 @@ vi.mock("../../src/hooks/winaudio/useWinAudioTarget", () => ({
   useWinAudioTarget: () => ({ address: ADDRESS, codec: "AAC" }),
 }));
 
-beforeEach(() => {
-  mock = createMockWinAudioApi(
-    structuredClone(recording) as WinAudioSnapshot,
-    { music: musicPlan as Plan, calls: callsPlan as Plan },
-    { adminMs: 0 },
-  );
-});
+const plans = { stereo: stereoPlan as Plan, monoMic: monoMicPlan as Plan } satisfies Record<FixKind, Plan>;
+
+function makeMock(edit?: (s: WinAudioSnapshot) => void) {
+  const snap = structuredClone(recording) as WinAudioSnapshot;
+  edit?.(snap);
+  mock = createMockWinAudioApi(snap, plans, { adminMs: 0 });
+}
+
+beforeEach(() => makeMock());
 
 const rowOf = (title: string) => screen.getByText(title).closest("li") as HTMLElement;
+const tile = (name: RegExp) => screen.getByRole("button", { name });
+const ready = () => screen.findByText("Currently:", { exact: false });
 
 describe("WindowsAudioPage on the recording", () => {
-  it("shows each row's live and recommended state, and the summary", async () => {
+  it("marks the current mode tile and says so under the tiles", async () => {
     render(<WindowsAudioPage />);
-    expect(await screen.findByText("Set up for music")).toBeInTheDocument();
-    const handsFree = rowOf("Hands-Free (mono call audio)");
-    expect(handsFree).toHaveTextContent("Now Off");
-    expect(handsFree).toHaveTextContent("Recommended Off");
-    expect(rowOf("Microphone for calls")).toHaveTextContent("Snowball (Blue Snowball)");
-    expect(rowOf("Format")).toHaveTextContent("48 kHz, 16-bit");
-    expect(rowOf("Let Windows turn off the adapter")).toHaveTextContent("differs from the recommendation");
+    await ready();
+    expect(tile(/^Stereo audio/)).toHaveAttribute("aria-pressed", "true");
+    expect(tile(/^Mono audio with mic/)).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("status")).toHaveTextContent("Currently: Stereo audio");
+    expect(screen.queryByText(/Needs attention/)).toBeNull();
+    // The old fix buttons are gone.
+    expect(screen.queryByRole("button", { name: /Fix for/ })).toBeNull();
+  });
+
+  it("marks Mono audio with mic as current when the hands-free profile is on", async () => {
+    makeMock((s) => {
+      s.handsFreeEnabled = true;
+    });
+    render(<WindowsAudioPage />);
+    await ready();
+    expect(tile(/^Mono audio with mic/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Currently: Mono audio with mic");
+  });
+
+  it("renders the renamed rows with live state, and Recommended only where it differs", async () => {
+    render(<WindowsAudioPage />);
+    await ready();
+    expect(screen.getByRole("list", { name: "Processing" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Format and volume" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Connection" })).toBeInTheDocument();
+    expect(rowOf("Mono mix (accessibility)")).toHaveTextContent("Off");
+    expect(rowOf("Default format")).toHaveTextContent("48 kHz, 16-bit");
+    expect(rowOf("Codec reported by headphones")).toHaveTextContent("AAC");
+    expect(rowOf("Bluetooth service")).toHaveTextContent("Running");
+    expect(rowOf("Lower other sounds during calls")).toHaveTextContent("Do nothing");
+    expect(rowOf("Adapter power saving")).toHaveTextContent("Recommended: Off");
+    expect(rowOf("Audio enhancements")).not.toHaveTextContent("Recommended");
+    expect(rowOf("Absolute volume")).not.toHaveTextContent("Recommended");
+    for (const gone of ["Hands-Free (mono call audio)", "Microphone for calls", "Mono audio", "Codec"]) {
+      expect(screen.queryByText(gone)).toBeNull();
+    }
     expect(screen.getByText(/not connected to Windows now/)).toBeInTheDocument();
   });
 
   it("marks admin rows with the shield, and only them", async () => {
     render(<WindowsAudioPage />);
-    await screen.findByText("Set up for music");
+    await ready();
     const shield = /needs a Windows permission prompt/;
-    expect(rowOf("Hands-Free (mono call audio)")).toHaveTextContent(shield);
     expect(rowOf("Absolute volume")).toHaveTextContent(shield);
-    expect(rowOf("Let Windows turn off the adapter")).toHaveTextContent(shield);
+    expect(rowOf("Adapter power saving")).toHaveTextContent(shield);
     expect(rowOf("Audio enhancements")).not.toHaveTextContent(shield);
-    expect(rowOf("Mono audio")).not.toHaveTextContent(shield);
+    expect(rowOf("Mono mix (accessibility)")).not.toHaveTextContent(shield);
   });
 
-  it("a switch applies its one change and the row re-reads", async () => {
+  it("a switch applies its one change, then the summary asks for attention", async () => {
     const user = userEvent.setup();
     render(<WindowsAudioPage />);
-    await screen.findByText("Set up for music");
+    await ready();
     await user.click(within(rowOf("Audio enhancements")).getByRole("switch"));
     await waitFor(() => expect(mock.batches).toHaveLength(1));
     expect(mock.batches[0]).toEqual({
@@ -68,23 +100,25 @@ describe("WindowsAudioPage on the recording", () => {
       ],
     });
     expect(await screen.findByText("Needs attention (1)")).toBeInTheDocument();
+    expect(rowOf("Audio enhancements")).toHaveTextContent("Recommended: Off");
     expect(screen.getByText("1 change applied and checked.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Restore" })).toBeInTheDocument();
   });
 
-  it("Fix for calls previews the plan, then applies admin first", async () => {
+  it("choosing Mono audio with mic previews its plan, then applies admin first", async () => {
     const user = userEvent.setup();
+    const fixPreset = vi.spyOn(mock, "fixPreset");
     render(<WindowsAudioPage />);
-    await screen.findByText("Set up for music");
-    await user.click(screen.getByRole("button", { name: "Fix for calls" }));
-    const sheet = await screen.findByRole("dialog", { name: "Fix for calls" });
+    await ready();
+    await user.click(tile(/^Mono audio with mic/));
+    expect(fixPreset).toHaveBeenCalledWith("monoMic", ADDRESS, "AAC");
+    const sheet = await screen.findByRole("dialog", { name: "Switch to Mono audio with mic" });
     const items = within(within(sheet).getByRole("list", { name: "Changes" })).getAllByRole("listitem");
     expect(items.map((i) => i.textContent)).toEqual([
-      "Turn Hands-Free (mono call audio) on.(needs a Windows permission prompt)",
-      "Use the headphones' Hands-Free audio and microphone for calls.",
+      "Turn the hands-free profile (headphone mic, mono sound) on.(needs a Windows permission prompt)",
+      "Use the headphones' hands-free audio and microphone for voice chat and calls.",
     ]);
     expect(sheet).toHaveTextContent(ADMIN_PROMPT_NOTE);
-    expect(sheet).toHaveTextContent("Music will be mono");
+    expect(sheet).toHaveTextContent("All sound will be mono");
     expect(mock.batches).toHaveLength(0);
 
     await user.click(within(sheet).getByRole("button", { name: "Apply" }));
@@ -93,15 +127,52 @@ describe("WindowsAudioPage on the recording", () => {
       [true, ["setHandsFree"]],
       [false, ["useHandsFreeForCommunications"]],
     ]);
-    // The recording has no Hands-Free endpoints, so the second change reports why.
-    expect(await screen.findByText(/Not changed: Hands-Free for calls/)).toBeInTheDocument();
+    // The recording has no hands-free endpoints, so the second change reports why.
+    expect(await screen.findByText(/Not changed: hands-free audio for voice chat/)).toBeInTheDocument();
+    // The hands-free profile is now on, so the mono tile is the current one.
+    await waitFor(() => expect(tile(/^Mono audio with mic/)).toHaveAttribute("aria-pressed", "true"));
+  });
+
+  it("choosing the current tile does nothing; Review opens the current mode's plan when attention is needed", async () => {
+    const user = userEvent.setup();
+    makeMock((s) => {
+      s.duckingMode = "reduce80";
+    });
+    const fixPreset = vi.spyOn(mock, "fixPreset");
+    render(<WindowsAudioPage />);
+    await ready();
+    await user.click(tile(/^Stereo audio/));
+    expect(fixPreset).not.toHaveBeenCalled();
+    expect(screen.getByText("Needs attention (1)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Review" }));
+    expect(fixPreset).toHaveBeenCalledWith("stereo", ADDRESS, "AAC");
+    expect(await screen.findByRole("dialog", { name: "Switch to Stereo audio" })).toBeInTheDocument();
+  });
+
+  it("keeps Restore inside the closed Advanced disclosure", async () => {
+    const user = userEvent.setup();
+    render(<WindowsAudioPage />);
+    await ready();
+    const toggle = screen.getByRole("button", { name: "Advanced" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: /Restore previous settings/ })).toBeNull();
+    await user.click(toggle);
+    expect(screen.queryByRole("button", { name: /Restore previous settings/ })).toBeNull();
+    expect(screen.getByText(/Nothing to restore yet/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Open Windows Sound settings/ })).toBeEnabled();
+
+    await user.click(within(rowOf("Mono mix (accessibility)")).getByRole("switch"));
+    expect(await screen.findByRole("button", { name: /Restore previous settings/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Forget restore point/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Restore previous settings/ }));
+    expect(await screen.findByRole("dialog", { name: "Restore Windows settings?" })).toBeInTheDocument();
   });
 });
 
 describe("PlanPreviewSheet", () => {
   it("says there is nothing to change and offers only Close", () => {
-    render(<PlanPreviewSheet kind="music" plan={musicPlan as Plan} onConfirm={vi.fn()} onClose={vi.fn()} />);
-    const sheet = screen.getByRole("dialog", { name: "Fix for music" });
+    render(<PlanPreviewSheet kind="stereo" plan={stereoPlan as Plan} onConfirm={vi.fn()} onClose={vi.fn()} />);
+    const sheet = screen.getByRole("dialog", { name: "Switch to Stereo audio" });
     expect(sheet).toHaveTextContent("Nothing to change.");
     expect(sheet).toHaveTextContent("not connected to Windows");
     expect(within(sheet).queryByRole("button", { name: "Apply" })).toBeNull();

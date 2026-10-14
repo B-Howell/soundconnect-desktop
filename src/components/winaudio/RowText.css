@@ -9,3 +9,21 @@
   white-space: normal;
   line-height: var(--leading-normal);
 }
+
+/* The live state beside the control: secondary text that never wraps. */
+.winaudio-row__value {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Value text before a switch keeps the Windows 11 "On [switch]" spacing. */
+.winaudio-row__value + .toggle,
+.winaudio-row__value + .text-button {
+  margin-inline-start: var(--space-3);
+}
+
+/* "Open" matches the value text beside it rather than the 15 px default. */
+.winaudio-row__value + .text-button {
+  font-size: var(--font-size-sm);
+}

@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { MODE_LABELS } from "../../lib/winaudio/rows";
 import type { FixKind, Plan } from "../../lib/winaudio/types";
 import { InfoNote } from "../primitives/InfoNote";
 import { Sheet } from "../primitives/Sheet";
@@ -8,7 +9,7 @@ import { AdminShield } from "./AdminShield";
 import "./PlanPreviewSheet.css";
 
 export interface PlanPreviewSheetProps {
-  /** The fix being previewed; null closes the sheet. */
+  /** The mode being previewed; null closes the sheet. */
   kind: FixKind | null;
   /** null while the app builds the plan. */
   plan: Plan | null;
@@ -17,13 +18,11 @@ export interface PlanPreviewSheetProps {
   onClose: () => void;
 }
 
-const TITLES: Record<FixKind, string> = { music: "Fix for music", calls: "Fix for calls" };
-
 /** The prompt line shown when the plan holds admin changes. */
 export const ADMIN_PROMPT_NOTE = "Windows will ask for permission once for the items marked with a shield.";
 
 /**
- * Lists exactly what a fix will change before anything changes, marks admin
+ * Lists exactly what switching to a mode will change before anything changes, marks admin
  * items and says a Windows prompt will appear for them, and shows the plan's
  * notes (what the app will not change). Apply is focused last: Cancel first.
  */
@@ -35,7 +34,7 @@ export function PlanPreviewSheet({ kind, plan, error, onConfirm, onClose }: Plan
     <Sheet
       open={kind !== null}
       onClose={onClose}
-      title={kind ? TITLES[kind] : ""}
+      title={kind ? `Switch to ${MODE_LABELS[kind]}` : ""}
       message={
         error ? error : plan === null ? "Reading Windows settings…" : empty ? "Nothing to change." : "These will change:"
       }

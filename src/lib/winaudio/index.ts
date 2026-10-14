@@ -16,12 +16,12 @@ export function getWinAudioApi(): Promise<WinAudioApi> {
     ? Promise.all([
         import("./mockApi"),
         import("../../../src-tauri/fixtures/winaudio/test-pc.json"),
-        import("../../../src-tauri/fixtures/winaudio/plan-music.json"),
-        import("../../../src-tauri/fixtures/winaudio/plan-calls.json"),
-      ]).then(([{ createMockWinAudioApi }, recording, music, calls]) =>
+        import("../../../src-tauri/fixtures/winaudio/plan-stereo.json"),
+        import("../../../src-tauri/fixtures/winaudio/plan-mono-mic.json"),
+      ]).then(([{ createMockWinAudioApi }, recording, stereo, monoMic]) =>
         createMockWinAudioApi(recording.default as WinAudioSnapshot, {
-          music: music.default as Plan,
-          calls: calls.default as Plan,
+          stereo: stereo.default as Plan,
+          monoMic: monoMic.default as Plan,
         } satisfies Record<FixKind, Plan>),
       )
     : Promise.resolve(tauriWinAudioApi);

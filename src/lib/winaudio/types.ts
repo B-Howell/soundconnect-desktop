@@ -7,7 +7,11 @@
 export type EndpointState = "active" | "disabled" | "notPresent" | "unplugged";
 export type Flow = "render" | "capture";
 export type DuckingMode = "muteOthers" | "reduce80" | "reduce50" | "doNothing";
-export type FixKind = "music" | "calls";
+/**
+ * The page's two modes (the crate's `FixKind`): "Stereo audio" (games, music,
+ * video; headphone mic off) or "Mono audio with mic" (the hands-free profile).
+ */
+export type FixKind = "stereo" | "monoMic";
 export type SpatialSound = "off" | "on" | "unknown";
 
 export interface Endpoint {

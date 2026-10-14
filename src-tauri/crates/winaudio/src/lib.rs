@@ -1,8 +1,8 @@
 //! Windows-side audio settings for one pair of Bluetooth headphones.
 //!
 //! - [`snapshot`] reads a [`WinAudioSnapshot`] (user rights, read-only).
-//! - [`plan::fix_plan`] / [`plan::restore_plan`] say what "Fix for music",
-//!   "Fix for calls" and "Restore" would change (pure, tested on a recording).
+//! - [`plan::fix_plan`] / [`plan::restore_plan`] say what "Stereo audio",
+//!   "Mono audio with mic" and "Restore" would change (pure, tested on a recording).
 //! - [`apply`] runs user-level changes in this process; [`apply_admin`] runs
 //!   the admin ones in an elevated copy of the app (`--apply-admin`, see
 //!   [`run_admin_cli`]). Every change is read back (`verified`).

@@ -6,7 +6,7 @@
         "address": "AA:BB:CC:12:34:56",
         "enabled": true
       },
-      "summary": "Turn Hands-Free (mono call audio) on.",
+      "summary": "Turn the hands-free profile (headphone mic, mono sound) on.",
       "admin": true
     },
     {
@@ -14,11 +14,11 @@
         "kind": "useHandsFreeForCommunications",
         "address": "AA:BB:CC:12:34:56"
       },
-      "summary": "Use the headphones' Hands-Free audio and microphone for calls.",
+      "summary": "Use the headphones' hands-free audio and microphone for voice chat and calls.",
       "admin": false
     }
   ],
   "notes": [
-    "Music will be mono, call quality, while a call app uses the headphone mic."
+    "All sound will be mono, call quality, while an app uses the headphone mic."
   ]
 }

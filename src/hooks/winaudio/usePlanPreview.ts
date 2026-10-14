@@ -3,7 +3,7 @@ import type { WinAudioApi } from "../../lib/winaudio/api";
 import type { Change, FixKind, Plan } from "../../lib/winaudio/types";
 
 export interface PlanPreviewState {
-  /** The fix being previewed, or null with the sheet closed. */
+  /** The mode being previewed, or null with the sheet closed. */
   kind: FixKind | null;
   /** The plan once the app has built it. */
   plan: Plan | null;
@@ -15,7 +15,7 @@ export interface PlanPreviewState {
   confirm: () => void;
 }
 
-/** "Fix for music" / "Fix for calls": fetch the plan, preview it, then apply it. */
+/** Switching to "Stereo audio" / "Mono audio with mic": fetch the plan, preview it, then apply it. */
 export function usePlanPreview(
   api: WinAudioApi | null,
   address: string | null,

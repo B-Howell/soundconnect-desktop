@@ -1,0 +1,88 @@
+/* A card-sized button: the Card surface and radius, a gold edge and a check
+   when it is the current choice. Tiles in a row stretch to equal height. */
+.choice-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-align: start;
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.choice-tile:hover:not(:disabled) {
+  background: var(--surface-2-hover);
+}
+
+.choice-tile:active:not(:disabled) {
+  background: var(--control-active);
+}
+
+.choice-tile:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.choice-tile:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.choice-tile--selected {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.choice-tile__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.choice-tile__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* An empty ring when not chosen, a filled gold disc with a check when chosen. */
+.choice-tile__mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--text-tertiary);
+  color: var(--on-accent);
+}
+
+.choice-tile--selected .choice-tile__mark {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.choice-tile__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.choice-tile__description {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}

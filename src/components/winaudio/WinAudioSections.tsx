@@ -3,21 +3,23 @@ import type { Change, ChangeResult, SettingsPage } from "../../lib/winaudio/type
 import { CardGrid, CardStack } from "../page/CardGrid";
 import { InfoNote } from "../primitives/InfoNote";
 import { ApplyResultNote } from "./ApplyResultNote";
+import { AudioModeSwitch, type AudioModeSwitchProps } from "./AudioModeSwitch";
 import { PlanPreviewSheet, type PlanPreviewSheetProps } from "./PlanPreviewSheet";
 import { RestoreSheet } from "./RestoreSheet";
+import { WinAudioAdvanced, type WinAudioAdvancedProps } from "./WinAudioAdvanced";
 import { WinAudioCard } from "./WinAudioCard";
-import { WinAudioSummary, type WinAudioSummaryProps } from "./WinAudioSummary";
 import "./WinAudioSections.css";
 
 export interface WinAudioSectionsProps {
+  mode: Omit<AudioModeSwitchProps, "busy">;
   cards: SettingCard[];
-  summary: WinAudioSummaryProps;
+  advanced: Omit<WinAudioAdvancedProps, "busy">;
   preview: PlanPreviewSheetProps;
   restoreSheet: { open: boolean; onConfirm: () => void; onClose: () => void };
   results: ChangeResult[] | null;
   resultError: string | null;
   onDismissResults: () => void;
-  /** A line above the cards, for example "not connected to Windows". */
+  /** A line under the mode tiles, for example "not connected to Windows". */
   notice?: string | null;
   onChange: (change: Change) => void;
   onOpenSettings: (page: SettingsPage) => void;
@@ -25,15 +27,16 @@ export interface WinAudioSectionsProps {
 }
 
 /**
- * The Windows audio page's content: the summary card with the fixes across
- * the top, the last apply's outcome, then the four cards (Calls vs music and
- * Processing on the left, Format and volume and Connection on the right),
- * plus the preview and restore sheets. Presentational; `WindowsAudioPage`
- * feeds it.
+ * The Windows audio page's content: the two mode tiles across the top with
+ * the summary line, the last apply's outcome, then Processing and Format and
+ * volume on the left, Connection and the Advanced disclosure (Restore) on
+ * the right, plus the preview and restore sheets. Presentational;
+ * `WindowsAudioPage` feeds it.
  */
 export function WinAudioSections({
+  mode,
   cards,
-  summary,
+  advanced,
   preview,
   restoreSheet,
   results,
@@ -55,18 +58,18 @@ export function WinAudioSections({
       <CardGrid>
         <CardStack span="full">
           <div className="winaudio-sections__top">
-            <WinAudioSummary {...summary} busy={busy} />
+            <AudioModeSwitch {...mode} busy={busy} />
             <ApplyResultNote results={results} error={resultError} onDismiss={onDismissResults} />
             {notice ? <InfoNote>{notice}</InfoNote> : null}
           </div>
         </CardStack>
         <CardStack>
-          {card("calls")}
           {card("processing")}
+          {card("format")}
         </CardStack>
         <CardStack>
-          {card("format")}
           {card("connection")}
+          <WinAudioAdvanced {...advanced} busy={busy} />
         </CardStack>
       </CardGrid>
       <PlanPreviewSheet {...preview} />

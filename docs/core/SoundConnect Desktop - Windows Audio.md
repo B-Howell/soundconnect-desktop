@@ -10,7 +10,7 @@ area: "core"
 
 **Status (2026-10-13): built and read live on the maintainer's PC.** The `winaudio`
 crate reads every Windows-side setting that changes what reaches the
-headphones, builds "Fix for music" / "Fix for calls" / "Restore" plans, and
+headphones, builds the "Stereo audio" / "Mono audio with mic" / "Restore" plans, and
 applies changes one at a time with a read-back of each. Admin changes run in
 the app's own exe relaunched elevated. The renderer shows it all on the
 "Windows audio" page ([Renderer](<../renderer/SoundConnect Desktop - Renderer.md#windows-audio-page>)).
@@ -34,10 +34,10 @@ Design input and the measured facts behind every value:
 | [sys/mod.rs](<../../src-tauri/crates/winaudio/src/sys/mod.rs>) | Module wiring |
 | [tests/plans.rs](<../../src-tauri/crates/winaudio/tests/plans.rs>) | Plan and restore tests on the recording |
 | [examples/snapshot.rs](<../../src-tauri/crates/winaudio/examples/snapshot.rs>) | Prints or records a snapshot (PC name scrubbed) |
-| [examples/fix_plan.rs](<../../src-tauri/crates/winaudio/examples/fix_plan.rs>) | Prints the fix plan for a recorded snapshot (the mock serves these) |
+| [examples/fix_plan.rs](<../../src-tauri/crates/winaudio/examples/fix_plan.rs>) | Prints a mode plan (`stereo` or `monoMic`) for a recorded snapshot (the mock serves these) |
 | [examples/enhancements_probe.rs](<../../src-tauri/crates/winaudio/examples/enhancements_probe.rs>) | Live read-back proof: enhancements off -> on -> off |
 | [test-pc.json](<../../src-tauri/fixtures/winaudio/test-pc.json>) | The snapshot recorded on the maintainer's PC |
-| [plan-music.json](<../../src-tauri/fixtures/winaudio/plan-music.json>), [plan-calls.json](<../../src-tauri/fixtures/winaudio/plan-calls.json>) | The crate's plans for that recording |
+| [plan-stereo.json](<../../src-tauri/fixtures/winaudio/plan-stereo.json>), [plan-mono-mic.json](<../../src-tauri/fixtures/winaudio/plan-mono-mic.json>) | The crate's plans for that recording |
 | [winaudio_commands.rs](<../../src-tauri/src/winaudio_commands.rs>) | Tauri commands, the restore point file, the helper entry |
 | [lib.rs](<../../src-tauri/src/lib.rs>) | Exits into the helper before Tauri starts; registers the commands |
 
@@ -180,7 +180,8 @@ endpoint writes were not run live.
 
 [winaudio_commands.rs](<../../src-tauri/src/winaudio_commands.rs>):
 `winaudio_snapshot(address, codec)`, `winaudio_fix_preset(kind, address,
-codec)` (`kind`: `music` | `calls`, returns the `Plan`),
+codec)` (`kind`: `stereo` | `monoMic`, returns the `Plan`; the 0.1.6 to
+0.1.8 names `music` / `calls` are still accepted as serde aliases),
 `winaudio_apply(address, changes)`, `winaudio_apply_admin(address, changes)`,
 `winaudio_restore(codec)`, `winaudio_restore_point()`,
 `winaudio_forget_restore_point()`, and `winaudio_open_settings(page)` (only
@@ -192,44 +193,51 @@ no capability entry (the app defines no command manifest), so
 
 The restore point is `winaudio-before.json` in the app config folder
 (`%APPDATA%\dev.soundconnect.desktop`): the snapshot taken just
-before the first change SoundConnect makes (any apply, fix or single
-switch). It is never overwritten; Restore diffs it against a fresh snapshot
+before the first change SoundConnect makes (any apply: a mode switch or a
+single switch). It is never overwritten; Restore diffs it against a fresh snapshot
 (`restore_plan`) and applies the difference (admin first); "Forget restore
 point" deletes it. Defaults go back only to endpoints recorded then;
 endpoint settings only on the same stereo endpoint id.
 
 ## Plans
 
-- **Fix for music**: Hands-Free off (admin) if on; the stereo endpoint as
+`FixKind` is `Stereo` / `MonoMic` (renamed in 0.1.9 from `Music` / `Calls`:
+the maintainer mainly plays games and wants stereo then, so the page offers
+a choice between stereo audio and mono audio with mic, not music versus
+calls). Preview sentences say "hands-free profile" rather than "Hands-Free
+(mono call audio)".
+
+- **Stereo audio** (`stereo_plan`): Hands-Free off (admin) if on; the stereo endpoint as
   default and calls playback, only while it is active (else a note); a
   non-Bluetooth active mic for any default that is the headphones' mic (else
   a note); enhancements off; ducking "Do nothing"; mono off; absolute volume
   on (admin) only if off; a note if spatial reads on. Power saving is not in
   it (it costs battery on a laptop).
-- **Fix for calls**: if the headphones offer Hands-Free: Hands-Free on
+- **Mono audio with mic** (`mono_mic_plan`): if the headphones offer Hands-Free: Hands-Free on
   (admin) unless on, then `useHandsFreeForCommunications` unless both
-  communications defaults already are the HFP endpoints; a note that music
-  is mono while a call app uses the mic. Without Hands-Free on offer, only a
+  communications defaults already are the HFP endpoints; a note that all
+  sound is mono while an app uses the headphone mic. Without Hands-Free on offer, only a
   note.
 
 ## Risks (from the research, as handled)
 
-- Hands-Free off removes the headphone mic: the calls plan undoes it in one
-  click; the preview says so.
+- Hands-Free off removes the headphone mic: choosing "Mono audio with mic"
+  undoes it in one click; the preview says so.
 - Hands-Free comes back after re-pairing or updates: the page re-reads on
-  focus and every 10 s and the row then shows "On" against "Off"; nothing
-  re-applies by itself.
+  focus and every 10 s and the mode tiles then show "Mono audio with mic" as
+  current; nothing re-applies by itself.
 - Enabling/disabling the service churns endpoints: `useHandsFreeForCommunications`
   waits for them; not yet observed live.
 - `IPolicyConfig` is undocumented: every write is read back; a mismatch stops
   the batch.
-- Absolute volume needs a reconnect; it is only in the music fix when off.
+- Absolute volume needs a reconnect; it is only in the stereo plan when off.
 
 ## Tests
 
-`cargo test -p winaudio`: 17 (9 in [tests/plans.rs](<../../src-tauri/crates/winaudio/tests/plans.rs>)
-on the recording: recorded facts, music while unplugged / connected / after
-Windows undid things, calls, restore empty and full, serde tags, raw value
+`cargo test -p winaudio`: 18 (10 in [tests/plans.rs](<../../src-tauri/crates/winaudio/tests/plans.rs>)
+on the recording: recorded facts, stereo while unplugged / connected / after
+Windows undid things, mono with mic, restore empty and full, serde tags, the
+`FixKind` names and their old aliases, raw value
 decoding; 2 in `registry.rs` on the recorded format blob and id/key mapping;
 5 in `elevate.rs` on the launch check, the helper's refusals of missing,
 malformed, oversized, user-level and empty plans, the decoded plan reaching the

@@ -25,7 +25,7 @@ function describe(r: ChangeResult): string {
     case "setDefaultEndpoint":
       return c.name;
     case "useHandsFreeForCommunications":
-      return "Hands-Free for calls";
+      return "hands-free audio for voice chat";
     case "setEnhancements":
       return "audio enhancements";
     case "setFormat":
@@ -35,9 +35,9 @@ function describe(r: ChangeResult): string {
     case "setDucking":
       return "lowering sounds during calls";
     case "setMonoAudio":
-      return "mono audio";
+      return "mono mix";
     case "setHandsFree":
-      return "Hands-Free";
+      return "hands-free profile";
     case "setAbsoluteVolumeDisabled":
       return "absolute volume";
     case "setAdapterPowerSaving":

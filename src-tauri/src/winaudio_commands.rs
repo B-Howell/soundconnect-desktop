@@ -2,8 +2,8 @@
 //! the restore point and the elevated helper's entry.
 //!
 //! - `winaudio_snapshot` reads the state for the headphones' address.
-//! - `winaudio_fix_preset` returns the plan for "Fix for music" / "Fix for
-//!   calls" (the renderer previews it, then applies it).
+//! - `winaudio_fix_preset` returns the plan for "Stereo audio" / "Mono audio
+//!   with mic" (the renderer previews it, then applies it).
 //! - `winaudio_apply` (user changes) and `winaudio_apply_admin` (admin changes,
 //!   one UAC prompt) save the restore point first if there is none.
 //! - `winaudio_restore` puts the restore point back; `winaudio_restore_point`

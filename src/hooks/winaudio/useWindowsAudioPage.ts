@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import type { WinAudioSectionsProps } from "../../components/winaudio/WinAudioSections";
-import { attentionCount, winAudioCards } from "../../lib/winaudio/rows";
+import { attentionCount, audioMode, modeDrift, winAudioCards } from "../../lib/winaudio/rows";
 import type { Change, SettingsPage } from "../../lib/winaudio/types";
 import { useApplyChanges } from "./useApplyChanges";
 import { usePlanPreview } from "./usePlanPreview";
@@ -20,8 +20,9 @@ export const NOT_CONNECTED_NOTICE =
 
 /**
  * Wires the Windows audio page: which headphones (`useWinAudioTarget`), the
- * live snapshot (refreshed on focus and every 10 s), applying single changes
- * and the two fixes through a preview, and the restore point.
+ * live snapshot (refreshed on focus and every 10 s), the current mode and
+ * its drift, applying single changes and the two modes through a preview,
+ * and the restore point.
  */
 export function useWindowsAudioPage(): WindowsAudioPageView {
   const { address, codec } = useWinAudioTarget();
@@ -41,17 +42,20 @@ export function useWindowsAudioPage(): WindowsAudioPageView {
   if (!snapshot) return { state: "loading", error };
 
   const connected = snapshot.stereo?.state === "active";
+  const current = audioMode(snapshot);
   return {
     state: "ready",
     props: {
+      mode: {
+        mode: current,
+        attention: attentionCount(cards, modeDrift(snapshot, current)),
+        onChoose: preview.open,
+      },
       cards,
-      summary: {
-        attention: attentionCount(cards),
-        deviceName: snapshot.stereo?.name ?? "your headphones",
-        onFixMusic: () => preview.open("music"),
-        onFixCalls: () => preview.open("calls"),
+      advanced: {
         onRestore: restorePoint.available ? () => setRestoreOpen(true) : undefined,
         onForgetRestorePoint: restorePoint.available ? () => void restorePoint.forget() : undefined,
+        onOpenSoundSettings: () => onOpenSettings("sound"),
       },
       preview: {
         kind: preview.kind,

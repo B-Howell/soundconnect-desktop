@@ -4,7 +4,7 @@ import type { Change } from "../../lib/winaudio/types";
 import { ListRow } from "../primitives/ListRow";
 import { OptionList } from "../primitives/OptionList";
 import { Sheet } from "../primitives/Sheet";
-import { RowSubtitle, RowTitle } from "./RowText";
+import { RowSubtitle, RowTitle, RowValue } from "./RowText";
 
 export interface WinAudioPickerRowProps {
   row: SettingRow;
@@ -14,9 +14,9 @@ export interface WinAudioPickerRowProps {
 }
 
 /**
- * A Windows audio setting with a choice (calls mic, ducking, format,
- * exclusive mode): the whole row opens a sheet of options; picking a
- * different one applies its change.
+ * A Windows audio setting with a choice (ducking, format, exclusive mode):
+ * the current choice on the right, and the whole row opens a sheet of
+ * options; picking a different one applies its change.
  */
 export function WinAudioPickerRow({ row, control, onChange, disabled = false }: WinAudioPickerRowProps) {
   const sheet = useSheet(disabled);
@@ -25,6 +25,7 @@ export function WinAudioPickerRow({ row, control, onChange, disabled = false }: 
       <ListRow
         title={<RowTitle row={row} />}
         subtitle={<RowSubtitle row={row} />}
+        trailing={<RowValue value={row.current} />}
         disclosure
         disabled={disabled}
         onPress={sheet.show}
