@@ -34,7 +34,9 @@ export function ConnectionStatus({ view, model, onSetUp, onOpenBluetoothSettings
     // The Status page shows a remembered device's own card (`RememberedDeviceCard`);
     // this plain card covers any other place that shows the idle state.
     case "offline":
-    case "idle": {
+    case "idle":
+    case "disconnected":
+    case "takenOver": {
       card = <ConnectionState visual={<ActivityPulse icon="bluetooth" />} title={connectionCopy(view).title} titleRef={target} />;
       break;
     }

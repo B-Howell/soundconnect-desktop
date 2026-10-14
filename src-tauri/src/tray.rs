@@ -116,6 +116,8 @@ pub struct TraySummary {
     pub reason: Option<FailureReason>,
     /// The status carries an error message (with nothing remembered, a failure even without a reason).
     pub last_error: bool,
+    /// The `autoConnect` setting ("Ready to connect" only shows with it off).
+    pub auto_connect: bool,
 }
 
 impl TraySummary {
@@ -135,6 +137,7 @@ impl TraySummary {
             windows_connected: status.windows_connected,
             reason: status.reason,
             last_error: status.last_error.is_some(),
+            auto_connect: status.auto_connect,
         }
     }
 }
@@ -173,6 +176,10 @@ pub fn state_label(s: &TraySummary) -> &'static str {
                 "Connection failed"
             } else if !s.remembered {
                 "No headphones set up"
+            } else if listed && s.reason == Some(FailureReason::TakenOver) {
+                "Another app has control"
+            } else if listed && s.auto_connect {
+                "Disconnected"
             } else if listed {
                 "Ready to connect"
             } else {
@@ -494,6 +501,7 @@ mod tests {
             windows_connected: true,
             reason: None,
             last_error: false,
+            auto_connect: false,
         }
     }
 
@@ -527,6 +535,14 @@ mod tests {
         s.reason = None;
         s.state = ConnState::Disconnected;
         assert_eq!(tooltip_text(&s), "SoundConnect · Ready to connect");
+        // "Ready to connect" only with auto-connect off.
+        s.auto_connect = true;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Disconnected");
+        s.reason = Some(FailureReason::TakenOver);
+        assert_eq!(tooltip_text(&s), "SoundConnect · Another app has control");
+        s.auto_connect = false;
+        assert_eq!(tooltip_text(&s), "SoundConnect · Another app has control");
+        s.reason = None;
         s.windows_connected = false;
         assert_eq!(
             tooltip_text(&s),

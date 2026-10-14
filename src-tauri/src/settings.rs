@@ -11,10 +11,17 @@
 //! launch by [`load`]. A missing or unreadable file means the defaults, which
 //! match `SETTINGS_DEFAULTS` in the store.
 //!
-//! `autoConnect` (default off) is read by the engine service at launch: off
-//! means the service stays idle until the user connects. The renderer may send
-//! it in [`settings_write`] or as the engine command `setAutoConnect`; a
-//! `settings_write` without it keeps the stored value.
+//! `autoConnect` (default on since 0.1.11) is read by the engine service at
+//! launch: on means the remembered headphones are connected when they appear
+//! in Windows' list; off means the service stays idle until the user connects.
+//! The renderer may send it in [`settings_write`] or as the engine command
+//! `setAutoConnect`; a `settings_write` without it keeps the stored value.
+//!
+//! `settingsVersion` (absent before 0.1.11, [`SETTINGS_VERSION`] since) runs
+//! one migration: a file older than version 2 never recorded a user's choice
+//! for `autoConnect` (0.1.10 and earlier wrote the default `false` on every
+//! save), so it is turned on once and the file is rewritten with the version.
+//! From then on the stored value is the user's and is never changed.
 
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -27,6 +34,13 @@ pub const FILE_NAME: &str = "settings.json";
 
 const THEMES: [&str; 3] = ["system", "light", "dark"];
 
+/// The settings schema version written since 0.1.11 (see the module doc).
+pub const SETTINGS_VERSION: u32 = 2;
+
+fn default_true() -> bool {
+    true
+}
+
 /// The app settings, camelCase on the wire and on disk.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,9 +49,12 @@ pub struct AppSettings {
     pub start_with_windows: bool,
     pub start_minimized: bool,
     pub keep_running_in_tray: bool,
-    /// Discover and connect without being asked (off: idle until "Connect").
-    #[serde(default)]
+    /// Connect when the remembered headphones appear (off: idle until "Connect").
+    #[serde(default = "default_true")]
     pub auto_connect: bool,
+    /// The schema version ([`SETTINGS_VERSION`]); older files are migrated once.
+    #[serde(default)]
+    pub settings_version: u32,
 }
 
 /// What `settings_write` accepts: the renderer's settings, `autoConnect`
@@ -62,6 +79,7 @@ impl SettingsInput {
             start_minimized: self.start_minimized,
             keep_running_in_tray: self.keep_running_in_tray,
             auto_connect: self.auto_connect.unwrap_or(current.auto_connect),
+            settings_version: SETTINGS_VERSION,
         }
     }
 }
@@ -74,7 +92,8 @@ impl Default for AppSettings {
             start_with_windows: false,
             start_minimized: false,
             keep_running_in_tray: true,
-            auto_connect: false,
+            auto_connect: true,
+            settings_version: SETTINGS_VERSION,
         }
     }
 }
@@ -82,6 +101,7 @@ impl Default for AppSettings {
 impl AppSettings {
     /// Like the renderer's `sanitizeSettings`: keeps each known field only when it
     /// has the right type (and a known theme); anything else is the default.
+    /// A file older than [`SETTINGS_VERSION`] is migrated: `autoConnect` on.
     pub fn from_json(text: &str) -> Self {
         // Windows PowerShell 5.1 writes UTF-8 with a BOM, which serde_json rejects.
         let text = text.trim_start_matches('\u{feff}');
@@ -108,6 +128,17 @@ impl AppSettings {
         if let Some(v) = flag("autoConnect") {
             s.auto_connect = v;
         }
+        let version = raw
+            .get("settingsVersion")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        if version < u64::from(SETTINGS_VERSION) {
+            // 0.1.10 and earlier stored no user choice for autoConnect.
+            s.auto_connect = true;
+        } else {
+            // Keep a newer version's number, so a later write never downgrades it.
+            s.settings_version = u32::try_from(version).unwrap_or(u32::MAX);
+        }
         s
     }
 
@@ -118,12 +149,33 @@ impl AppSettings {
     }
 }
 
-/// Reads `path`; a missing, unreadable or invalid file gives the defaults.
+/// Reads `path`; a missing, unreadable or invalid file gives the defaults. A
+/// file from before [`SETTINGS_VERSION`] is migrated and rewritten once, so
+/// the migration never runs again and a later user choice is kept.
 pub fn load_from(path: &Path) -> AppSettings {
-    match std::fs::read_to_string(path) {
-        Ok(text) => AppSettings::from_json(&text),
-        Err(_) => AppSettings::default(),
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return AppSettings::default();
+    };
+    let settings = AppSettings::from_json(&text);
+    if stored_version(&text) < SETTINGS_VERSION {
+        eprintln!(
+            "settings: migrated {} to version {SETTINGS_VERSION} (autoConnect on)",
+            path.display()
+        );
+        if let Err(e) = save_to(path, &settings) {
+            eprintln!("settings: could not rewrite {}: {e}", path.display());
+        }
     }
+    settings
+}
+
+/// The `settingsVersion` a file carries (0 when absent or unreadable).
+fn stored_version(text: &str) -> u32 {
+    serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}'))
+        .ok()
+        .and_then(|v| v.get("settingsVersion").and_then(|n| n.as_u64()))
+        .and_then(|n| u32::try_from(n).ok())
+        .unwrap_or(0)
 }
 
 /// Writes `settings` as pretty JSON, creating the directory.
@@ -245,6 +297,7 @@ mod tests {
             start_minimized: true,
             keep_running_in_tray: false,
             auto_connect: true,
+            settings_version: SETTINGS_VERSION,
         };
         save_to(&path, &written).unwrap();
         let text = std::fs::read_to_string(&path).unwrap();
@@ -270,7 +323,7 @@ mod tests {
         .unwrap();
         assert_eq!(s.theme, "light");
         assert!(s.keep_running_in_tray);
-        assert!(!s.auto_connect, "autoConnect defaults to off");
+        assert!(s.auto_connect, "autoConnect defaults to on");
     }
 
     #[test]
@@ -291,11 +344,76 @@ mod tests {
         )
         .unwrap();
         assert!(!with.merge(&current).auto_connect);
-        assert!(AppSettings::from_json(r#"{"autoConnect":true}"#).auto_connect);
-        assert!(!AppSettings::from_json("{}").auto_connect);
+        assert!(AppSettings::from_json(r#"{"autoConnect":true,"settingsVersion":2}"#).auto_connect);
         assert!(
-            AppSettings::from_json("\u{feff}{\"autoConnect\":true}").auto_connect,
+            !AppSettings::from_json(r#"{"autoConnect":false,"settingsVersion":2}"#).auto_connect
+        );
+        assert!(
+            AppSettings::from_json("\u{feff}{\"autoConnect\":false,\"settingsVersion\":2}")
+                .settings_version
+                == SETTINGS_VERSION,
             "a leading BOM is ignored"
         );
+        assert!(
+            !AppSettings::from_json("\u{feff}{\"autoConnect\":false,\"settingsVersion\":2}")
+                .auto_connect,
+            "a leading BOM is ignored"
+        );
+    }
+
+    /// The file 0.1.10 wrote (no `settingsVersion`, the default `false`).
+    const V0110_FILE: &str = r#"{
+  "theme": "system",
+  "startWithWindows": false,
+  "startMinimized": false,
+  "keepRunningInTray": true,
+  "autoConnect": false
+}"#;
+
+    #[test]
+    fn migration_turns_auto_connect_on_once_and_keeps_a_later_user_choice() {
+        let path = temp_file("migrate");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, V0110_FILE).unwrap();
+        let first = load_from(&path);
+        assert!(
+            first.auto_connect,
+            "a 0.1.10 install auto-connects after the update"
+        );
+        assert!(first.keep_running_in_tray, "the other values are kept");
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(
+            text.contains("\"settingsVersion\": 2"),
+            "rewritten once: {text}"
+        );
+        assert!(text.contains("\"autoConnect\": true"), "{text}");
+
+        // The user switches it off (settings_write / setAutoConnect store it).
+        let off = AppSettings {
+            auto_connect: false,
+            ..first
+        };
+        save_to(&path, &off).unwrap();
+        for _ in 0..2 {
+            assert!(!load_from(&path).auto_connect, "a user-set false is kept");
+        }
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            serde_json::to_string_pretty(&off).unwrap()
+        );
+    }
+
+    #[test]
+    fn a_newer_settings_version_is_kept() {
+        let s = AppSettings::from_json(r#"{"autoConnect":false,"settingsVersion":3}"#);
+        assert_eq!(s.settings_version, 3);
+        assert!(!s.auto_connect);
+    }
+
+    #[test]
+    fn a_missing_file_auto_connects_and_is_not_created_by_load() {
+        let path = temp_file("fresh");
+        assert!(load_from(&path).auto_connect);
+        assert!(!path.exists(), "the renderer writes it moments later");
     }
 }

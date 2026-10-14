@@ -17,7 +17,9 @@ const ATTEMPT_FAILURES = new Set(["busy", "timeout", "refused"]);
  * - otherwise, with remembered headphones: offline ("Headphones off or
  *   disconnected") when `windowsConnected` is false (including a
  *   `notConnectedToWindows` failure and a link lost because they switched
- *   off), else idle ("Ready to connect": Connect is the call to action); with
+ *   off), else takenOver ("Another app has control") for a `takenOver`
+ *   reason, else idle ("Ready to connect": Connect is the call to action)
+ *   with auto-connect off or disconnected ("Disconnected") with it on; with
  *   nothing remembered, searching ("No headphones set up"), or the error for
  *   a failed attempt;
  * - `discovering`: offline when Windows does not list the remembered
@@ -50,7 +52,9 @@ export function toConnectionView(
         };
       }
       if (!title) return { kind: "searching" };
-      return listed ? { kind: "idle", deviceName: title } : { kind: "offline", deviceName: title };
+      if (!listed) return { kind: "offline", deviceName: title };
+      if (status.reason === "takenOver") return { kind: "takenOver", deviceName: title };
+      return { kind: status.autoConnect ? "disconnected" : "idle", deviceName: title };
     }
     case "discovering":
       if (!title) return { kind: "searching" };

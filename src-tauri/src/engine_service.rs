@@ -10,13 +10,22 @@
 //!              -> Initialising -> Ready -> Disconnected(lastError)
 //! ```
 //!
-//! - Idle after launch: unless the `autoConnect` setting is on, the service does
-//!   nothing until the renderer sends `connect`, `reconnect` or `scan`; the
-//!   status carries the remembered profile (`profiles.rs`) so the window can say
-//!   "not connected" without searching.
-//! - Discovering (`autoConnect` on): every `discovery_interval` (2 s) list the
-//!   devices Windows has connected and pick the most recently remembered one,
-//!   else the first whose name starts with `WH-`, `WF-` or `LinkBuds`.
+//! - Idle: every `discovery_interval` (3 s) list the devices Windows has
+//!   connected (enumeration only) for `windowsConnected`. With the
+//!   `autoConnect` setting on (the default since 0.1.11) and a remembered
+//!   device, the check that sees that device appear in the list (not listed ->
+//!   listed, including the first check after launch) connects once. It is
+//!   never a retry loop: a failed or lost link waits for the next appearance
+//!   or the user's `connect` (the "polite controller" rule, see "Coexisting
+//!   with the Sony phone app" in the Core Services doc).
+//! - Taken over: a link lost after Ready while Windows still lists the
+//!   headphones (no user `disconnect`, no setting-change reconnect) means
+//!   another controller (the Sony phone app) took the one control channel the
+//!   headset allows. Status `disconnected` with reason `takenOver`; nothing
+//!   reconnects until the user connects, the headphones leave and re-enter
+//!   Windows' list, or the app restarts.
+//! - Discovering: only a user's `reconnect` with nothing remembered (one pass:
+//!   the first name starting with `WH-`, `WF-` or `LinkBuds`).
 //! - Connecting: like upstream `client/Client.cpp` `StartConnection` /
 //!   `TryConnectionAttempt` / `AdvanceConnectionAttempt`: service UUIDs in the
 //!   order `{MDR_SERVICE_UUID_XM5, MDR_SERVICE_UUID_LEGACY}`, each attempt with a
@@ -37,7 +46,8 @@
 //!   [`CONFIRM_CONNECTION_MODE_ALERT`], `requiresChoice`), and a link lost within
 //!   [`RECOVERY_TRIGGER`] of a connection-quality, Speak-to-Chat or DSEE command
 //!   is reconnected for up to `recovery_window` (20 s) even with `autoConnect`
-//!   off, published as `connecting` with reason `reconnectingAfterSettingChange`.
+//!   off, published as `connecting` with reason `reconnectingAfterSettingChange`;
+//!   a second drop within [`SECOND_DROP_WINDOW`] of that one is a takeover.
 //!
 //! See `docs/core/SoundConnect Desktop - Core Services.md`.
 
@@ -86,7 +96,15 @@ pub const CONFIRM_CONNECTION_MODE_ALERT: &str = "CONFIRM_CONNECTION_MODE_CHANGE"
 /// after the command; the margin covers a slow commit).
 pub const RECOVERY_TRIGGER: Duration = Duration::from_secs(10);
 
-/// Name prefixes auto-connected to when no address is remembered.
+/// A reconnected link that drops again this soon after a setting-change drop
+/// is treated as taken over (the phone app and this app must not take turns).
+pub const SECOND_DROP_WINDOW: Duration = Duration::from_secs(60);
+
+/// A link the user took back from another controller that drops again this
+/// soon after Ready ends as `busy` ("Another app is using the headphones.").
+pub const RETAKE_WINDOW: Duration = Duration::from_secs(10);
+
+/// Name prefixes a `reconnect` with nothing remembered picks from.
 const NAME_PREFIXES: [&str; 3] = ["WH-", "WF-", "LinkBuds"];
 
 /// Engine events drained per tick at most (upstream polls once per frame).
@@ -98,21 +116,19 @@ const INIT_TIMEOUT: &str = "initialisation timed out";
 /// Timing and options. [`ServiceConfig::default`] is the app's configuration.
 #[derive(Clone, Debug)]
 pub struct ServiceConfig {
-    /// Period of the Windows device-list check while not connected: with
-    /// auto-connect it is the discovery pass that connects; otherwise it only
-    /// updates `windowsConnected` (enumeration only: no RFCOMM connect, no
-    /// inquiry for new devices).
+    /// Period of the Windows device-list check while not connected. It updates
+    /// `windowsConnected` (enumeration only: no RFCOMM connect, no inquiry for
+    /// new devices); with auto-connect, the check that sees the remembered
+    /// headphones appear connects once.
     pub discovery_interval: Duration,
-    /// Wait after a failed connection before trying the same device again.
-    pub retry_backoff: Duration,
     /// Per-UUID connect deadline (upstream `kAttemptTimeoutMs = 10'000`).
     pub attempt_timeout: Duration,
     /// Engine poll period while connecting or connected.
     pub tick: Duration,
     /// Give up when init + sync has not completed in this time.
     pub init_timeout: Duration,
-    /// Discover and connect on start and after a lost link (the `autoConnect`
-    /// setting; off by default).
+    /// Connect when the remembered headphones appear in Windows' list (the
+    /// `autoConnect` setting, read from `settings.json`).
     pub auto_connect: bool,
     /// `devices.json` (remembered profiles); `None` keeps them in memory only.
     pub profiles_path: Option<PathBuf>,
@@ -130,11 +146,10 @@ impl Default for ServiceConfig {
     fn default() -> Self {
         Self {
             discovery_interval: Duration::from_secs(3),
-            retry_backoff: Duration::from_secs(10),
             attempt_timeout: Duration::from_millis(10_000),
             tick: Duration::from_millis(16),
             init_timeout: Duration::from_secs(30),
-            auto_connect: false,
+            auto_connect: true,
             profiles_path: None,
             dump_path: None,
             packet_log: false,
@@ -173,6 +188,11 @@ pub enum FailureReason {
     Timeout,
     /// The device closed or rejected the link while initialising.
     Refused,
+    /// Another controller (the Sony phone app) took the headset's one control
+    /// channel: the link was lost after Ready while Windows still listed the
+    /// headphones. Nothing reconnects by itself until they leave and re-enter
+    /// Windows' list or the user connects.
+    TakenOver,
     /// The headset dropped the link right after a setting change (a
     /// connection-quality change restarts its Bluetooth links); the service is
     /// reconnecting by itself.
@@ -192,7 +212,8 @@ pub enum ConnState {
 
 /// `engine:status` payload:
 /// `{state, deviceName?, address?, protocol?, lastError?, reason?, remembered,
-/// windowsConnected}`. `remembered` is the profile of the device in `address`
+/// windowsConnected, autoConnect}` (`autoConnect` is the setting, so the
+/// renderer and the tray say "Ready to connect" only when it is off). `remembered` is the profile of the device in `address`
 /// when there is one, else the most recently seen profile, else `null`.
 /// `windowsConnected` says whether Windows lists that device (or, with none
 /// remembered, any Sony-looking one) as connected; it is re-checked every
@@ -214,6 +235,7 @@ pub struct StatusView {
     pub reason: Option<FailureReason>,
     pub remembered: Option<DeviceProfile>,
     pub windows_connected: bool,
+    pub auto_connect: bool,
 }
 
 impl StatusView {
@@ -227,6 +249,7 @@ impl StatusView {
             reason: None,
             remembered: None,
             windows_connected: false,
+            auto_connect: false,
         }
     }
 }
@@ -421,6 +444,7 @@ impl EngineService {
         {
             let mut first = StatusView::disconnected(None);
             first.remembered = profiles.latest().cloned();
+            first.auto_connect = config.auto_connect;
             *shared.status.lock().expect("status lock") = first;
         }
         let thread = std::thread::Builder::new()
@@ -520,6 +544,8 @@ struct Live {
     engine: Engine,
     target: Target,
     ready: bool,
+    /// When the link reached Ready.
+    ready_at: Option<Instant>,
     since: Instant,
     /// Frames libmdr could not parse and the service skipped on this link.
     malformed_skips: u64,
@@ -546,10 +572,21 @@ struct Worker {
     idle: Option<Box<dyn Transport>>,
     /// The `autoConnect` setting.
     auto_connect: bool,
-    /// `disconnect` pauses auto-connect until `reconnect` / `connect`.
+    /// The user's `disconnect` pauses auto-connect until `reconnect` /
+    /// `connect`, or until the headphones leave Windows' list.
     suspended: bool,
+    /// Another controller took the link (`takenOver`): no automatic connect of
+    /// any kind until `connect` / `reconnect` or the headphones leave Windows'
+    /// list. Not persisted, so a relaunch clears it.
+    taken_over: bool,
+    /// The user is taking the link back from another controller; a drop
+    /// within [`RETAKE_WINDOW`] of Ready ends as `busy`.
+    retake: bool,
+    /// When the last setting-change reconnect started ([`SECOND_DROP_WINDOW`]).
+    recovered_at: Option<Instant>,
     profiles: Profiles,
-    next_scan: Instant,
+    /// When the next setting-change reconnect attempt is due.
+    next_retry: Instant,
     /// When the next Windows device-list check is due while idle.
     next_check: Instant,
     /// Windows lists the remembered headphones as connected (last check).
@@ -595,8 +632,11 @@ impl Worker {
             idle: None,
             auto_connect,
             suspended: false,
+            taken_over: false,
+            retake: false,
+            recovered_at: None,
             profiles,
-            next_scan: Instant::now(),
+            next_retry: Instant::now(),
             next_check: Instant::now(),
             windows_listed: false,
             status,
@@ -617,9 +657,9 @@ impl Worker {
     /// How long to wait for a message before the next step.
     fn wait(&self) -> Duration {
         match self.phase {
-            // Without auto-connect `next_scan` is stale; only the Windows check is due.
-            Phase::Idle => if self.auto_connect && !self.suspended {
-                self.next_scan.min(self.next_check)
+            // Outside a setting-change reconnect only the Windows check is due.
+            Phase::Idle => if self.recovery.is_some() {
+                self.next_retry.min(self.next_check)
             } else {
                 self.next_check
             }
@@ -667,11 +707,12 @@ impl Worker {
             ConnState::Connecting | ConnState::Initialising | ConnState::Ready => true,
             ConnState::Disconnected | ConnState::Discovering => self.windows_listed,
         };
+        status.auto_connect = self.auto_connect;
         if status == self.status {
             return;
         }
         eprintln!(
-            "engine: status {:?} device={} address={} protocol={} lastError={} reason={:?} windowsConnected={}",
+            "engine: status {:?} device={} address={} protocol={} lastError={} reason={:?} windowsConnected={} autoConnect={}",
             status.state,
             status.device_name.as_deref().unwrap_or("-"),
             status.address.as_deref().unwrap_or("-"),
@@ -682,6 +723,7 @@ impl Worker {
             status.last_error.as_deref().unwrap_or("-"),
             status.reason,
             status.windows_connected,
+            status.auto_connect,
         );
         self.status = status.clone();
         *self.shared.status.lock().expect("status lock") = status.clone();
@@ -706,6 +748,7 @@ impl Worker {
                 .map(|_| FailureReason::ReconnectingAfterSettingChange),
             remembered: None,
             windows_connected: true,
+            auto_connect: self.auto_connect,
         }
     }
 
@@ -745,6 +788,7 @@ impl Worker {
                 }
                 EngineCommand::Reconnect => {
                     self.suspended = false;
+                    self.retake = std::mem::take(&mut self.taken_over);
                     self.drop_link();
                     match self.profiles.latest().cloned() {
                         Some(p) => self.connect_to(p.address, now),
@@ -753,6 +797,7 @@ impl Worker {
                 }
                 EngineCommand::Connect { address } => {
                     self.suspended = false;
+                    self.retake = std::mem::take(&mut self.taken_over);
                     self.drop_link();
                     self.connect_to(address, now);
                 }
@@ -778,13 +823,23 @@ impl Worker {
                 }
                 EngineCommand::SetAutoConnect { enabled } => {
                     eprintln!("engine: autoConnect={enabled}");
-                    self.auto_connect = enabled;
-                    if enabled {
-                        self.suspended = false;
-                        self.next_scan = now;
-                    } else if self.status.state == ConnState::Discovering {
+                    let was = std::mem::replace(&mut self.auto_connect, enabled);
+                    if self.status.state == ConnState::Discovering && !enabled {
                         let last_error = self.status.last_error.clone();
                         self.set_status(StatusView::disconnected(last_error));
+                    } else {
+                        self.refresh_status();
+                    }
+                    // Switching it on counts as an appearance: connect once if
+                    // the remembered headphones are listed. The renderer's push
+                    // of an unchanged value at start does nothing.
+                    if enabled && !was {
+                        self.suspended = false;
+                        if matches!(self.phase, Phase::Idle) {
+                            if let Some(list) = self.windows_list() {
+                                self.auto_connect_from(&list, now);
+                            }
+                        }
                     }
                 }
                 EngineCommand::OpenBluetoothSettings => {
@@ -866,13 +921,7 @@ impl Worker {
     }
 
     fn devices(&mut self) -> Result<Vec<DeviceView>, String> {
-        let list = match self.idle.as_mut() {
-            Some(t) => t.devices(),
-            // Connected: the live transport is inside the engine; listing does not
-            // touch a socket, so a fresh transport answers just as well.
-            None => (self.factory)().and_then(|mut t| t.devices()),
-        }
-        .map_err(|e| e.to_string())?;
+        let list = self.devices_info().map_err(|e| e.to_string())?;
         Ok(list
             .into_iter()
             .map(|d| DeviceView {
@@ -904,18 +953,23 @@ impl Worker {
         *self.shared.snapshot.lock().expect("snapshot lock") = None;
     }
 
-    /// The link failed: back to Disconnected with the error and its reason;
-    /// auto-connect (if on) retries after `retry_backoff`. While a recovery
-    /// window is open it stays `connecting` and retries after `recovery_retry`.
+    /// The link failed: back to Disconnected with the error and its reason.
+    /// Nothing retries (auto-connect waits for the next appearance in Windows'
+    /// list). While a recovery window is open it stays `connecting` and
+    /// retries after `recovery_retry`. A failure while taking the link back
+    /// from another controller leaves the service taken over.
     fn lost(&mut self, error: String, reason: Option<FailureReason>, now: Instant) {
         eprintln!("engine: link lost: {error} ({reason:?})");
         self.drop_link();
+        if std::mem::take(&mut self.retake) {
+            self.taken_over = true;
+        }
         if let Some(r) = &self.recovery {
             if now < r.until {
                 let (target, until) = (r.target.clone(), r.until);
                 let status = self.status_for(ConnState::Connecting, &target, None);
                 self.set_status(status);
-                self.next_scan = (now + self.cfg.recovery_retry).min(until);
+                self.next_retry = (now + self.cfg.recovery_retry).min(until);
                 return;
             }
             eprintln!("engine: no reconnect within the recovery window");
@@ -925,7 +979,6 @@ impl Worker {
             reason,
             ..StatusView::disconnected(Some(error))
         });
-        self.next_scan = now + self.cfg.retry_backoff;
     }
 
     // ---- state machine ------------------------------------------------------
@@ -942,7 +995,7 @@ impl Worker {
                     let error =
                         format!("{} did not reconnect after the setting change", target.name);
                     self.lost(error, Some(FailureReason::Timeout), now);
-                } else if now >= self.next_scan {
+                } else if now >= self.next_retry {
                     eprintln!(
                         "engine: reconnecting {} after a setting change",
                         target.address
@@ -951,11 +1004,7 @@ impl Worker {
                 }
             }
             Phase::Idle => {
-                if self.auto_connect && !self.suspended && now >= self.next_scan {
-                    self.next_scan = now + self.cfg.discovery_interval;
-                    self.next_check = self.next_scan;
-                    self.scan(now);
-                } else if now >= self.next_check {
+                if now >= self.next_check {
                     self.next_check = now + self.cfg.discovery_interval;
                     self.check_windows(now);
                 }
@@ -972,32 +1021,85 @@ impl Worker {
                 match self.step_live(&mut live, now) {
                     Ok(()) => self.phase = Phase::Live(live),
                     Err(error) => {
-                        // After Ready a drop is just "disconnected" (headphones off,
-                        // out of range); before it, the device refused or stalled.
-                        let reason = match (live.ready, error.as_str()) {
-                            (true, _) => None,
-                            (false, INIT_TIMEOUT) => Some(FailureReason::Timeout),
-                            (false, _) => Some(FailureReason::Refused),
-                        };
-                        let after_change = self
-                            .setting_change_at
-                            .is_some_and(|t| now.duration_since(t) <= RECOVERY_TRIGGER);
-                        if live.ready && after_change && self.recovery.is_none() {
-                            eprintln!(
-                                "engine: link lost right after a setting change; reconnecting for {:?}",
-                                self.cfg.recovery_window
-                            );
-                            self.recovery = Some(Recovery {
-                                target: live.target.clone(),
-                                until: now + self.cfg.recovery_window,
-                            });
-                        }
+                        let (target, ready, ready_at) =
+                            (live.target.clone(), live.ready, live.ready_at);
                         drop(live);
-                        self.lost(error, reason, now);
+                        self.link_dropped(error, target, ready, ready_at, now);
                     }
                 }
             }
         }
+    }
+
+    /// Classifies a lost link (see "Coexisting with the Sony phone app"):
+    /// - before Ready: the device refused or stalled (`refused` / `timeout`);
+    /// - right after a setting change (and not a second drop within
+    ///   [`SECOND_DROP_WINDOW`] of the last one): the setting-change reconnect;
+    /// - Windows no longer lists the headphones: plain `disconnected`, so their
+    ///   next appearance auto-connects;
+    /// - Windows still lists them: another controller took the channel,
+    ///   `takenOver` (or `busy` when the user took it back less than
+    ///   [`RETAKE_WINDOW`] ago); no automatic connect until they cycle.
+    fn link_dropped(
+        &mut self,
+        error: String,
+        target: Target,
+        ready: bool,
+        ready_at: Option<Instant>,
+        now: Instant,
+    ) {
+        if !ready {
+            let reason = if error == INIT_TIMEOUT {
+                FailureReason::Timeout
+            } else {
+                FailureReason::Refused
+            };
+            return self.lost(error, Some(reason), now);
+        }
+        let after_change = self
+            .setting_change_at
+            .is_some_and(|t| now.duration_since(t) <= RECOVERY_TRIGGER);
+        let second_drop = self
+            .recovered_at
+            .is_some_and(|t| now.duration_since(t) <= SECOND_DROP_WINDOW);
+        if after_change && !second_drop && self.recovery.is_none() {
+            eprintln!(
+                "engine: link lost right after a setting change; reconnecting for {:?}",
+                self.cfg.recovery_window
+            );
+            self.recovered_at = Some(now);
+            self.recovery = Some(Recovery {
+                target,
+                until: now + self.cfg.recovery_window,
+            });
+            return self.lost(error, None, now);
+        }
+        // A failed list says nothing about Windows' state: assume listed, the
+        // polite choice (no automatic reconnect).
+        let listed = self.windows_list().is_none_or(|list| {
+            list.iter()
+                .any(|d| d.mac.eq_ignore_ascii_case(&target.address))
+        });
+        if !listed {
+            self.retake = false;
+            self.windows_listed = false;
+            return self.lost(error, None, now);
+        }
+        let quick = std::mem::take(&mut self.retake)
+            && ready_at.is_some_and(|t| now.duration_since(t) <= RETAKE_WINDOW);
+        self.taken_over = true;
+        self.windows_listed = true;
+        let reason = if quick {
+            FailureReason::Busy
+        } else {
+            FailureReason::TakenOver
+        };
+        eprintln!(
+            "engine: {} still listed by Windows: taken over by another controller{}; no automatic reconnect until they leave Windows' list or the user connects",
+            target.address,
+            if second_drop { " (second drop after a setting change)" } else { "" },
+        );
+        self.lost(error, Some(reason), now);
     }
 
     /// The address whose Windows connection `windowsConnected` reports: the
@@ -1020,14 +1122,14 @@ impl Worker {
         }
     }
 
-    /// Records what Windows lists. When that changes, a failure shown for the
-    /// old Windows state is stale, so a Disconnected status drops its error
-    /// and reason and the renderer shows the real state; when the headphones
-    /// appear and auto-connect is on, the next step connects at once (no
-    /// backoff).
-    fn note_windows(&mut self, listed: bool, now: Instant) {
+    /// Records what Windows lists; returns whether it changed. When it
+    /// changes, a failure shown for the old Windows state is stale, so a
+    /// Disconnected status drops its error and reason and the renderer shows
+    /// the real state. Leaving the list ends a user's `disconnect` pause and a
+    /// takeover: the next appearance may auto-connect.
+    fn note_windows(&mut self, listed: bool) -> bool {
         if listed == self.windows_listed {
-            return;
+            return false;
         }
         eprintln!("engine: Windows lists the headphones as connected: {listed}");
         self.windows_listed = listed;
@@ -1036,30 +1138,83 @@ impl Worker {
             status.last_error = None;
             status.reason = None;
         }
+        if !listed && (self.suspended || self.taken_over) {
+            eprintln!("engine: the headphones left Windows' list; auto-connect may resume");
+            self.suspended = false;
+            self.taken_over = false;
+            self.retake = false;
+        }
         self.set_status(status);
-        if listed && self.auto_connect && !self.suspended {
-            self.next_scan = now;
+        true
+    }
+
+    /// Windows' device list. While a link is live the transport is inside the
+    /// engine; listing does not touch a socket, so a fresh transport answers
+    /// just as well.
+    fn devices_info(&mut self) -> mdr::Result<Vec<DeviceInfo>> {
+        match self.idle.as_mut() {
+            Some(t) => t.devices(),
+            None => (self.factory)().and_then(|mut t| t.devices()),
         }
     }
 
-    /// The idle check: one device list, no connect and no inquiry.
-    fn check_windows(&mut self, now: Instant) {
-        match self
-            .transport()
-            .and_then(|t| t.devices().map_err(|e| e.to_string()))
-        {
-            Ok(list) => {
-                let listed = self.lists_watched(&list);
-                self.note_windows(listed, now);
+    /// Windows' device list now, or None when listing fails (logged).
+    fn windows_list(&mut self) -> Option<Vec<DeviceInfo>> {
+        match self.devices_info() {
+            Ok(list) => Some(list),
+            Err(e) => {
+                eprintln!("engine: Windows device check failed: {e}");
+                None
             }
-            Err(e) => eprintln!("engine: Windows device check failed: {e}"),
         }
     }
 
-    /// One discovery pass: pick the most recently remembered device Windows
-    /// lists as connected, else the first Sony-looking name, and connect.
-    /// With auto-connect off (a `reconnect` without a profile), finding
-    /// nothing ends in Disconnected(notConnectedToWindows) instead of waiting.
+    /// The idle check: one device list, no inquiry. With auto-connect, the
+    /// remembered headphones appearing in the list connects once.
+    fn check_windows(&mut self, now: Instant) {
+        let Some(list) = self.windows_list() else {
+            return;
+        };
+        let listed = self.lists_watched(&list);
+        if self.note_windows(listed) && listed {
+            self.auto_connect_from(&list, now);
+        }
+    }
+
+    /// The automatic connect: with `autoConnect` on, not paused by the user,
+    /// not taken over and idle, connect to the most recently seen remembered
+    /// device in `list`. Only ever called on an appearance (or when the
+    /// setting is switched on), never as a retry.
+    fn auto_connect_from(&mut self, list: &[DeviceInfo], now: Instant) {
+        if !self.auto_connect
+            || self.suspended
+            || self.taken_over
+            || self.recovery.is_some()
+            || !matches!(self.phase, Phase::Idle)
+        {
+            return;
+        }
+        let pick = list
+            .iter()
+            .filter(|d| self.profiles.contains(&d.mac))
+            .max_by_key(|d| self.profiles.get(&d.mac).map(|p| p.last_seen));
+        if let Some(d) = pick {
+            eprintln!(
+                "engine: auto-connect: {} {} appeared in Windows' list",
+                d.mac, d.name
+            );
+            let target = Target {
+                address: d.mac.clone(),
+                name: d.name.clone(),
+            };
+            self.begin_connect(target, now);
+        }
+    }
+
+    /// One discovery pass for a `reconnect` with nothing remembered: pick the
+    /// most recently remembered device Windows lists as connected, else the
+    /// first Sony-looking name, and connect; finding nothing ends in
+    /// Disconnected(notConnectedToWindows).
     fn scan(&mut self, now: Instant) {
         if self.status.state != ConnState::Discovering {
             let last_error = self.status.last_error.clone();
@@ -1075,7 +1230,7 @@ impl Worker {
             Ok(d) => {
                 // A failed list says nothing about Windows' state (as in `check_windows`).
                 let listed = self.lists_watched(&d);
-                self.note_windows(listed, now);
+                self.note_windows(listed);
                 d
             }
             Err(e) => {
@@ -1101,11 +1256,10 @@ impl Worker {
                 };
                 self.begin_connect(target, now);
             }
-            None if !self.auto_connect => self.set_status(StatusView {
+            None => self.set_status(StatusView {
                 reason: Some(FailureReason::NotConnectedToWindows),
                 ..StatusView::disconnected(Some("no headphones are connected to Windows".into()))
             }),
-            None => {}
         }
     }
 
@@ -1137,6 +1291,9 @@ impl Worker {
         };
         self.windows_listed = listed;
         if !listed {
+            // Not a contested link: the headphones are simply not there, so a
+            // takeover being taken back ends here and their appearance may auto-connect.
+            self.retake = false;
             let error = format!("{} is not connected to Windows", target.name);
             return self.lost(error, Some(FailureReason::NotConnectedToWindows), now);
         }
@@ -1251,6 +1408,7 @@ impl Worker {
                     engine,
                     target,
                     ready: false,
+                    ready_at: None,
                     since: now,
                     malformed_skips: 0,
                 }));
@@ -1294,6 +1452,7 @@ impl Worker {
                 Event::SyncComplete => {
                     if !live.ready {
                         live.ready = true;
+                        live.ready_at = Some(now);
                         full_log = true;
                         if self.recovery.take().is_some() {
                             eprintln!("engine: reconnected after the setting change");
@@ -1796,6 +1955,10 @@ mod tests {
         closed: bool,
         /// Refuse every connect from now on (the headset is not back yet).
         refuse: Arc<std::sync::atomic::AtomicBool>,
+        /// Another controller takes the channel: the next `recv` fails once,
+        /// with no command of ours (the headset closes our RFCOMM link while
+        /// Windows keeps listing it).
+        take_over: Arc<std::sync::atomic::AtomicBool>,
     }
 
     impl Transport for ListedReplay {
@@ -1819,6 +1982,15 @@ mod tests {
             self.inner.disconnect()
         }
         fn recv(&mut self, dst: &mut [u8]) -> mdr::Result<Option<usize>> {
+            if self
+                .take_over
+                .swap(false, std::sync::atomic::Ordering::SeqCst)
+            {
+                return Err(mdr::Error::Transport(
+                    "An existing connection was forcibly closed by the remote host (simulated)"
+                        .into(),
+                ));
+            }
             if let Some(n) = self.inner.recv(dst)? {
                 return Ok(Some(n));
             }
@@ -1917,6 +2089,8 @@ mod tests {
         refuse: Arc<std::sync::atomic::AtomicBool>,
         /// Windows lists the headset as connected; flip it to power the headset on or off.
         listed: Arc<std::sync::atomic::AtomicBool>,
+        /// Set to make another controller take the live link (one recv error).
+        take_over: Arc<std::sync::atomic::AtomicBool>,
     }
 
     impl Harness {
@@ -2017,6 +2191,8 @@ mod tests {
         let refuse = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let listed_flag = Arc::new(std::sync::atomic::AtomicBool::new(s.listed));
         let f_listed = listed_flag.clone();
+        let take_over = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let f_take_over = take_over.clone();
         let (f_tx, f_armed, f_drained, f_queued, f_connects, f_refuse) = (
             tx.clone(),
             armed.clone(),
@@ -2053,12 +2229,23 @@ mod tests {
                 close_after: close_after.clone(),
                 closed: false,
                 refuse: f_refuse.clone(),
+                take_over: f_take_over.clone(),
             }) as Box<dyn Transport>)
+        });
+        // Auto-connect needs a remembered device: seed the replayed one.
+        let profiles_path = profiles_path.or_else(|| {
+            auto_connect.then(|| {
+                static SEEDED: std::sync::atomic::AtomicUsize =
+                    std::sync::atomic::AtomicUsize::new(0);
+                let n = SEEDED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let path = temp_profiles(&format!("seeded-{n}"));
+                write_profiles(&path, &[xm4_profile()]);
+                path
+            })
         });
         let sink = Arc::new(VecSink::default());
         let config = ServiceConfig {
             discovery_interval: Duration::from_millis(5),
-            retry_backoff: Duration::from_secs(60),
             tick: Duration::from_millis(1),
             auto_connect,
             profiles_path,
@@ -2077,6 +2264,7 @@ mod tests {
             connects,
             refuse,
             listed: listed_flag,
+            take_over,
         }
     }
 
@@ -2111,11 +2299,11 @@ mod tests {
             states(&h.sink),
             vec![
                 ConnState::Disconnected,
-                ConnState::Discovering,
                 ConnState::Connecting,
                 ConnState::Initialising,
                 ConnState::Ready
-            ]
+            ],
+            "the first check sees the remembered headset appear and connects once"
         );
         let ready = h.service.status();
         assert_eq!(ready.device_name.as_deref(), Some("WH-1000XM3"));
@@ -2845,18 +3033,29 @@ mod tests {
         h.service.shutdown();
     }
 
-    /// With auto-connect on, the same check connects as soon as Windows lists
-    /// the headset, and Ready reports `windowsConnected`.
+    /// With auto-connect on and a remembered headset, the 3 s check connects
+    /// as soon as Windows lists it (an appearance), and Ready reports
+    /// `windowsConnected`. While it is not listed nothing is tried.
     #[test]
     fn auto_connect_connects_when_windows_lists_the_headset() {
         let h = start_setup(Setup {
             listed: false,
             ..Setup::xm4()
         });
-        wait_for("discovering", || {
-            h.service.status().state == ConnState::Discovering
+        wait_for("the launch status", || {
+            !h.sink.statuses.lock().unwrap().is_empty()
         });
-        assert!(!h.service.status().windows_connected);
+        std::thread::sleep(Duration::from_millis(100));
+        let s = h.service.status();
+        assert_eq!(
+            (s.state, s.windows_connected),
+            (ConnState::Disconnected, false)
+        );
+        assert!(s.auto_connect, "the status carries the setting");
+        assert!(
+            h.connects.lock().unwrap().is_empty(),
+            "nothing tried while unlisted"
+        );
         h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
         wait_for("Ready", || h.service.status().state == ConnState::Ready);
         assert!(h.service.status().windows_connected);
@@ -2888,8 +3087,11 @@ mod tests {
 
     #[test]
     fn set_auto_connect_starts_discovery_from_idle() {
+        let path = temp_profiles("set-auto");
+        write_profiles(&path, &[xm4_profile()]);
         let h = start_setup(Setup {
             auto_connect: false,
+            profiles_path: Some(path),
             ..Setup::xm4()
         });
         std::thread::sleep(Duration::from_millis(30));
@@ -3409,7 +3611,143 @@ mod tests {
         });
         std::thread::sleep(Duration::from_millis(100));
         assert_eq!(h.service.status().state, ConnState::Disconnected);
-        assert_eq!(h.service.status().reason, None);
+        // Windows still lists the headset: another controller took the link.
+        assert_eq!(h.service.status().reason, Some(FailureReason::TakenOver));
         assert_eq!(h.connects.lock().unwrap().len(), 2, "no reconnect");
+    }
+
+    // ---- the polite controller rule (Coexisting with the Sony phone app) -----
+
+    /// Waits for Ready with the replay drained and armed; returns the connect
+    /// count so far.
+    fn auto_ready(h: &Harness) -> usize {
+        h.ready_and_armed();
+        h.connects.lock().unwrap().len()
+    }
+
+    /// Another controller takes the live link.
+    fn take_over(h: &Harness) {
+        h.take_over.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("the takeover", || {
+            h.service.status().state == ConnState::Disconnected
+        });
+    }
+
+    #[test]
+    fn a_drop_while_windows_lists_the_headset_is_taken_over_and_never_reconnects() {
+        let h = start_setup(Setup::xm4());
+        let connects = auto_ready(&h);
+        take_over(&h);
+        let s = h.service.status();
+        assert_eq!(s.reason, Some(FailureReason::TakenOver), "{s:?}");
+        assert!(s.windows_connected);
+        assert_eq!(serde_json::to_value(&s).unwrap()["reason"], "takenOver");
+        // Dozens of 5 ms Windows checks later: still no attempt of any kind.
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(h.connects.lock().unwrap().len(), connects, "no reconnect");
+        assert_eq!(h.service.status().reason, Some(FailureReason::TakenOver));
+        h.service.shutdown();
+    }
+
+    #[test]
+    fn after_a_takeover_the_headset_leaving_and_reappearing_auto_connects() {
+        let h = start_setup(Setup::xm4());
+        let connects = auto_ready(&h);
+        take_over(&h);
+        h.listed.store(false, std::sync::atomic::Ordering::SeqCst);
+        wait_for("offline", || {
+            let s = h.service.status();
+            !s.windows_connected && s.reason.is_none()
+        });
+        assert_eq!(h.connects.lock().unwrap().len(), connects);
+        h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("Ready after the appearance", || {
+            h.service.status().state == ConnState::Ready
+        });
+        assert_eq!(
+            h.connects.lock().unwrap().len(),
+            connects + 2,
+            "one attempt (both UUIDs)"
+        );
+        h.service.shutdown();
+    }
+
+    #[test]
+    fn user_connect_takes_control_back_and_a_quick_second_takeover_is_busy() {
+        let h = start_setup(Setup::xm4());
+        auto_ready(&h);
+        take_over(&h);
+        h.service
+            .send(EngineCommand::Connect {
+                address: XM3_ADDRESS.into(),
+            })
+            .unwrap();
+        let connects = auto_ready(&h);
+        assert_eq!(h.service.status().reason, None);
+        // The phone app takes it again within RETAKE_WINDOW of Ready.
+        take_over(&h);
+        let s = h.service.status();
+        assert_eq!(s.reason, Some(FailureReason::Busy), "{s:?}");
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(
+            h.connects.lock().unwrap().len(),
+            connects,
+            "still taken over"
+        );
+        h.service.shutdown();
+    }
+
+    #[test]
+    fn a_second_drop_within_60_s_of_a_setting_change_drop_is_a_takeover() {
+        let h = xm4_closing_after_connection_mode(Duration::from_secs(20));
+        h.ready_and_armed();
+        change_connection_mode_confirmed(&h);
+        wait_for("the setting-change reconnect", || {
+            h.service.status().reason == Some(FailureReason::ReconnectingAfterSettingChange)
+        });
+        let connects = auto_ready(&h);
+        take_over(&h);
+        let s = h.service.status();
+        assert_eq!(s.reason, Some(FailureReason::TakenOver), "{s:?}");
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(
+            h.connects.lock().unwrap().len(),
+            connects,
+            "no second setting-change reconnect"
+        );
+    }
+
+    #[test]
+    fn user_disconnect_pauses_auto_connect_until_the_headset_cycles_in_windows() {
+        let h = start_setup(Setup::xm4());
+        let connects = auto_ready(&h);
+        h.service.send(EngineCommand::Disconnect).unwrap();
+        wait_for("Disconnected", || {
+            h.service.status().state == ConnState::Disconnected
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        assert_eq!(h.connects.lock().unwrap().len(), connects, "paused");
+        let s = h.service.status();
+        assert_eq!((s.reason, s.windows_connected), (None, true));
+        h.listed.store(false, std::sync::atomic::Ordering::SeqCst);
+        wait_for("offline", || !h.service.status().windows_connected);
+        h.listed.store(true, std::sync::atomic::Ordering::SeqCst);
+        wait_for("Ready after the appearance", || {
+            h.service.status().state == ConnState::Ready
+        });
+        h.service.shutdown();
+    }
+
+    #[test]
+    fn auto_connect_without_a_remembered_headset_never_connects() {
+        // A first run before setup: nothing remembered, a Sony headset listed.
+        let path = temp_profiles("first-run");
+        let h = start_setup(Setup {
+            profiles_path: Some(path),
+            ..Setup::xm4()
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        assert!(h.connects.lock().unwrap().is_empty());
+        assert_eq!(states(&h.sink), vec![ConnState::Disconnected]);
     }
 }

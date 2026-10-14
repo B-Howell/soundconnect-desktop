@@ -10,6 +10,7 @@ export const connectFailureText: Readonly<Record<ConnectFailureReason, string>> 
   busy: "Another app is using the headphones.",
   timeout: "Connection timed out.",
   refused: "Connection refused.",
+  takenOver: "Another app has control.",
 };
 
 /** The failure part of a status reason (`reconnectingAfterSettingChange` is not a failure). */

@@ -18,7 +18,11 @@ export interface SettingsValues {
   startMinimized: boolean;
   /** The setup wizard was finished once; a later wizard (after "Forget") skips the welcome. */
   onboardingDone: boolean;
-  /** Connect when the remembered headphones appear (`setAutoConnect`, pushed by `useAutoConnectSync`). */
+  /**
+   * Connect when the remembered headphones appear in Windows' list
+   * (`setAutoConnect`, pushed by `useAutoConnectSync`). On by default since
+   * 0.1.11; finishing the setup wizard turns it on; Settings can turn it off.
+   */
   autoConnect: boolean;
   /** Check GitHub for a new version once a day at launch (`useAutoUpdateCheck`). */
   checkForUpdates: boolean;
@@ -43,13 +47,29 @@ export const SETTINGS_DEFAULTS: SettingsValues = {
   keepRunningInTray: true,
   startMinimized: false,
   onboardingDone: false,
-  autoConnect: false,
+  autoConnect: true,
   checkForUpdates: true,
   lastUpdateCheck: 0,
 };
 
 /** The single `localStorage` key holding every app setting as JSON. */
 export const SETTINGS_STORAGE_KEY = "soundconnect.settings";
+
+/**
+ * The persisted schema version. Version 2 (0.1.11) runs one migration: a
+ * version 1 entry never recorded a user's choice for `autoConnect` (it held
+ * the old default `false`), so it becomes `true` once; from then on the
+ * stored value is the user's.
+ */
+export const SETTINGS_VERSION = 2;
+
+/** Upgrades a persisted entry written by an older version (zustand's `migrate`). */
+export function migrateSettings(stored: unknown, version: number): unknown {
+  if (version < 2 && typeof stored === "object" && stored !== null) {
+    return { ...(stored as Record<string, unknown>), autoConnect: true };
+  }
+  return stored;
+}
 
 /**
  * Keeps only well-typed known fields from whatever was stored, so a stale,
@@ -99,7 +119,8 @@ export function createSettingsStore(storage: StateStorage) {
       }),
       {
         name: SETTINGS_STORAGE_KEY,
-        version: 1,
+        version: SETTINGS_VERSION,
+        migrate: migrateSettings,
         storage: createJSONStorage(() => storage),
         partialize: ({
           theme,

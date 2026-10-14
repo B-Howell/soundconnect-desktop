@@ -14,7 +14,7 @@ export interface SetupWizard {
   back: () => void;
   /** Leaves the wizard for the app; only offered while headphones are remembered. */
   cancel: (() => void) | undefined;
-  /** Finishes setup: remembers it was done, closes the wizard, opens Status. */
+  /** Finishes setup: remembers it was done, turns auto-connect on, closes the wizard, opens Status. */
   finish: () => void;
 }
 
@@ -30,6 +30,7 @@ export function useSetupWizard(): SetupWizard {
   const setStep = useSetupStore((state) => state.setStep);
   const closeSetup = useSetupStore((state) => state.closeSetup);
   const setOnboardingDone = useSettingsStore((state) => state.setOnboardingDone);
+  const setAutoConnect = useSettingsStore((state) => state.setAutoConnect);
   const setPage = useNavStore((state) => state.setPage);
   const store = useEngineStoreApi();
   const attemptPhase = useEngine((state) => state.attempt?.phase);
@@ -59,8 +60,10 @@ export function useSetupWizard(): SetupWizard {
 
   const finish = useCallback(() => {
     setOnboardingDone(true);
+    // Set up once: from now on the headphones connect when Windows lists them.
+    setAutoConnect(true);
     close();
-  }, [setOnboardingDone, close]);
+  }, [setOnboardingDone, setAutoConnect, close]);
 
   return { step, count: SETUP_STEPS.length, next, back, cancel: hasRemembered ? close : undefined, finish };
 }

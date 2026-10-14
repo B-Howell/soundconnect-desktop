@@ -75,7 +75,7 @@ describe("failure texts", () => {
     expect(failureText("timeout")).toBe("Connection timed out.");
     expect(failureText("refused")).toBe("Connection refused.");
     expect(failureText(undefined)).toBe("");
-    expect(Object.keys(connectFailureText).sort()).toEqual(["busy", "notConnectedToWindows", "refused", "timeout"]);
+    expect(Object.keys(connectFailureText).sort()).toEqual(["busy", "notConnectedToWindows", "refused", "takenOver", "timeout"]);
   });
 });
 
@@ -166,7 +166,7 @@ describe("mock engine: setup flow", () => {
     const api = createMockEngineApi(fixture, { stepMs: 100, remembered: false });
     const states: string[] = [];
     api.onStatus((s) => states.push(s.state));
-    expect(await api.status()).toEqual({ state: "disconnected", remembered: null, windowsConnected: true });
+    expect(await api.status()).toEqual({ state: "disconnected", remembered: null, windowsConnected: true, autoConnect: false });
     await vi.advanceTimersByTimeAsync(2000);
     expect(states).toEqual([]);
   });
@@ -215,7 +215,7 @@ describe("mock engine: setup flow", () => {
     await vi.advanceTimersByTimeAsync(400);
     expect(selectConnected(store.getState())).toBe(true);
     await store.getState().send({ type: "forgetDevice", address: XM4 });
-    expect(store.getState().status).toEqual({ state: "disconnected", remembered: null, windowsConnected: true });
+    expect(store.getState().status).toEqual({ state: "disconnected", remembered: null, windowsConnected: true, autoConnect: true });
     stop();
   });
 });

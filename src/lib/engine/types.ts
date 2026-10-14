@@ -346,8 +346,13 @@ export interface RememberedDevice {
   lastSeen: number;
 }
 
-/** Why a connect attempt failed (`engine:status` `reason`, with `state: "disconnected"`). */
-export type ConnectFailureReason = "notConnectedToWindows" | "busy" | "timeout" | "refused";
+/**
+ * Why the headphones are not connected (`engine:status` `reason`, with
+ * `state: "disconnected"`): a failed attempt, or `takenOver`: another app
+ * (the Sony phone app) took the headphones' one control channel while Windows
+ * still listed them, and the engine does not reconnect by itself.
+ */
+export type ConnectFailureReason = "notConnectedToWindows" | "busy" | "timeout" | "refused" | "takenOver";
 
 /**
  * `engine:status` `reason`: a failure (with `disconnected`), or
@@ -375,6 +380,8 @@ export interface EngineStatus {
    * listed.
    */
   windowsConnected?: boolean;
+  /** The engine's `autoConnect` setting; "Ready to connect" shows only when it is off. Absent from older engines: off. */
+  autoConnect?: boolean;
 }
 
 /** One device in an `engine:devices` event (the answer to `scan`). */

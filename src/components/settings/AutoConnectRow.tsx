@@ -2,9 +2,11 @@ import { useSettingsStore } from "../../state/settingsStore";
 import { ToggleRow } from "../primitives/ToggleRow";
 
 /**
- * "Connect automatically when the headphones appear": stored in the settings
- * store and pushed to the engine as `setAutoConnect` by `useAutoConnectSync`.
- * Off by default, so the app waits for the user's Connect.
+ * "Connect automatically": stored in the settings store and pushed to the
+ * engine as `setAutoConnect` by `useAutoConnectSync`. On by default (and
+ * turned on by finishing setup): the remembered headphones connect when they
+ * appear in Windows' list, never as a retry after another app took control.
+ * Off, the app waits for the user's Connect.
  */
 export function AutoConnectRow() {
   const autoConnect = useSettingsStore((state) => state.autoConnect);

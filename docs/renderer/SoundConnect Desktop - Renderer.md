@@ -2681,8 +2681,9 @@ setup", the Status card and the gate do not flicker on a failed new device.
 ### Settings rows and persistence
 
 [settingsStore.ts](<../../src/state/settingsStore.ts>) gained
-`onboardingDone` and `autoConnect` (both default false, sanitised like the
-rest). The Rust mirror still gets only its four fields (`BridgedSettings` in
+`onboardingDone` (default false) and `autoConnect` (default false until
+0.1.10, **true** since 0.1.11), both sanitised like the rest; see
+[Auto-connect after setup (0.1.11)](#auto-connect-after-setup-0111)). The Rust mirror still gets only its four fields (`BridgedSettings` in
 [settingsBridge.ts](<../../src/lib/settingsBridge.ts>); the core's
 `settings_write` keeps the stored `autoConnect` when the field is absent).
 `autoConnect` reaches the engine as the `setAutoConnect` command, which the
@@ -2691,7 +2692,7 @@ core also stores, sent once at start and on every change by
 renderer's stored choice wins. The Settings page's new first section,
 "Headphones" ([HeadphonesRows.tsx](<../../src/components/settings/HeadphonesRows.tsx>)):
 [AutoConnectRow.tsx](<../../src/components/settings/AutoConnectRow.tsx>)
-("Connect automatically when the headphones appear", off by default),
+(since 0.1.10 just "Connect automatically", no subtitle; on by default since 0.1.11),
 [SetUpHeadphonesRow.tsx](<../../src/components/settings/SetUpHeadphonesRow.tsx>)
 (reopens the wizard at "Pair with Windows", clearing an old attempt) and,
 while something is remembered,
@@ -2780,7 +2781,9 @@ card through `connectionStateLabel` in
 | State line (0.1.10) | When | Second line |
 |---|---|---|
 | Headphones off or disconnected (`offline`) | `windowsConnected` false, including a `notConnectedToWindows` failure, a link lost because they switched off, and auto-connect waiting (`discovering`) | none |
-| Ready to connect (`idle`) | listed, not connected to the app (auto-connect off, or a link lost while still listed) | none; Connect is the call to action |
+| Ready to connect (`idle`) | listed, not connected to the app, auto-connect **off** (0.1.11: only then) | none; Connect is the call to action |
+| Disconnected (`disconnected`, 0.1.11) | listed, not connected to the app, auto-connect on (the user disconnected; it waits until they leave and re-enter Windows' list) | none; Connect |
+| Another app has control (`takenOver`, 0.1.11) | `disconnected` with reason `takenOver` while listed: the phone app took the control channel; nothing reconnects by itself | none; Connect takes control back |
 | Connecting… / Reconnecting… | `connecting`, `initialising`, `ready` before the snapshot, and `discovering` while Windows lists them; the second with `reconnectingAfterSettingChange` | none |
 | Connection failed (`error`) | only `busy`, `timeout` or `refused` while listed | the reason (`failureText`); Try again, Bluetooth settings |
 | Connected | Ready with a snapshot; the rail shows the battery chip instead of the line | none |
@@ -3079,6 +3082,42 @@ on the right; "Recommended" shows only on adapter power saving (the
 recording's one difference). Not verified: the page inside the real Tauri
 window against live Windows.
 
+## Auto-connect after setup (0.1.11)
+
+"Connect automatically" is on by default and the setup wizard's Done
+(`useSetupWizard.finish`) sets it on explicitly, so headphones set up once
+connect whenever Windows lists them (the engine's rule: Core Services,
+[Contract changes 0.1.11](<../core/SoundConnect Desktop - Core Services.md#contract-changes-0111-auto-connect-after-setup-and-the-polite-controller-rule>)).
+The Settings row
+([AutoConnectRow.tsx](<../../src/components/settings/AutoConnectRow.tsx>))
+keeps its 0.1.10 text, title "Connect automatically" and no subtitle, and
+turns it off. [settingsStore.ts](<../../src/state/settingsStore.ts>) persists
+version 2: `migrateSettings` turns a version 1 entry's `autoConnect` on once
+(0.1.10 only ever stored the default `false`), and a later choice is kept.
+`engine:status` now carries `autoConnect`, so
+[useConnectionView](<../../src/hooks/engine/useConnectionView.ts>) and the
+tray say "Ready to connect" only with it off ("Disconnected" with it on),
+and a `takenOver` reason maps to the `takenOver` view ("Another app has
+control", Connect) in
+[connectionCopy.ts](<../../src/components/shell/connectionCopy.ts>),
+[RememberedDeviceCard.tsx](<../../src/components/status/RememberedDeviceCard.tsx>)
+and [ConnectionStatus.tsx](<../../src/components/shell/ConnectionStatus.tsx>).
+The mock ([mockApi.ts](<../../src/lib/engine/mockApi.ts>)) reports
+`autoConnect`, connects only when the setting is switched on (not on an
+unchanged push) and offers `simulateTakeover()`.
+
+Tests: [settingsStore.test.ts](<../../tests/settings/settingsStore.test.ts>)
+(default on; a version 1 entry migrates once, a user's later `false` is
+kept), [SetupWizard.test.tsx](<../../tests/onboarding/SetupWizard.test.tsx>)
+(Done sets it on, also after it was switched off, and sends `setAutoConnect
+{enabled: true}`),
+[RememberedDevice.test.tsx](<../../tests/onboarding/RememberedDevice.test.tsx>)
+(the Settings toggle is on by default and switches off and on, sending each
+value; "Disconnected" instead of "Ready to connect" with auto-connect on;
+"Another app has control" with Connect sending `connect`, then a quick
+`busy`; offline once Windows stops listing them) and
+[connectFlow.test.ts](<../../tests/onboarding/connectFlow.test.ts>).
+
 ## Copy register
 
 0.1.10 rewrote every user-facing string after the maintainer called the old
@@ -3127,10 +3166,18 @@ line):
 |---|---|---|---|
 | Nothing remembered | No headphones set up | none | Set up |
 | Remembered, Windows does not list them | Headphones off or disconnected | none | Connect, Bluetooth settings |
-| Remembered, listed, app idle | Ready to connect | none | Connect, Bluetooth settings |
+| Remembered, listed, app idle, auto-connect off | Ready to connect | none | Connect, Bluetooth settings |
+| Remembered, listed, app idle, auto-connect on (after Disconnect) | Disconnected | none | Connect, Bluetooth settings |
+| Another app took control (`takenOver`) | Another app has control | none | Connect, Bluetooth settings |
 | Connecting / after a setting change | Connecting… / Reconnecting… | none | (disabled Connecting…) |
 | Failed after a real attempt | Connection failed | Another app is using the headphones. / Connection timed out. / Connection refused. | Try again, Bluetooth settings |
 | Connected | Connected (the rail shows the battery chip instead) | none | |
+
+Taking control back: if the link drops again within 10 s of Connect, the
+engine reports `busy` and the card shows "Connection failed" / "Another app
+is using the headphones." (Core Services, the polite controller rule). The
+wizard's line for `takenOver` (`connectFailureText`) is "Another app has
+control.".
 
 Screenshots of the Status card with the mock engine (headless Edge over CDP,
 1100 x 720, dark):

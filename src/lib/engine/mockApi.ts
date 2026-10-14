@@ -53,6 +53,8 @@ export interface MockEngineApi extends EngineApi {
   simulateAlert(alert: AlertEvent): void;
   /** Drops the link with an error, as a lost RFCOMM socket does. */
   simulateLinkLoss(lastError: string): void;
+  /** Another app takes control: `disconnected` with reason `takenOver`, no reconnect. */
+  simulateTakeover(): void;
   /** Makes the next connect attempt fail with `reason`. */
   failNextConnect(reason: ConnectFailureReason): void;
 }
@@ -84,7 +86,7 @@ export function createMockEngineApi(
   };
   let remembered: RememberedDevice | null = startRemembered ? profile : null;
   let autoConnect = startAutoConnect;
-  let status: EngineStatus = { state: "disconnected", remembered, windowsConnected: true };
+  let status: EngineStatus = { state: "disconnected", remembered, windowsConnected: true, autoConnect };
   let payload: SnapshotPayload | null = null;
   let started = false;
   let walk: ReturnType<typeof setTimeout> | undefined;
@@ -106,7 +108,11 @@ export function createMockEngineApi(
 
   /** The mock's headphones are listed by Windows unless a status says otherwise (as the engine reports it). */
   const publishStatus = (next: EngineStatus) => {
-    next = { ...next, windowsConnected: next.windowsConnected ?? next.reason !== "notConnectedToWindows" };
+    next = {
+      ...next,
+      windowsConnected: next.windowsConnected ?? next.reason !== "notConnectedToWindows",
+      autoConnect,
+    };
     status = next;
     statusHandlers.forEach((h) => h(next));
   };
@@ -212,10 +218,14 @@ export function createMockEngineApi(
         remembered = null;
         drop();
         return;
-      case "setAutoConnect":
+      case "setAutoConnect": {
+        // As the engine: switching it on counts as an appearance; an unchanged value does nothing.
+        const switchedOn = command.enabled && !autoConnect;
         autoConnect = command.enabled;
-        if (autoConnect && remembered && status.state === "disconnected") runConnect(AUTO_SEQUENCE);
+        if (switchedOn && remembered && status.state === "disconnected") runConnect(AUTO_SEQUENCE);
+        else publishStatus(status);
         return;
+      }
       case "openBluetoothSettings":
         console.info("mock engine: openBluetoothSettings (the real engine opens ms-settings:bluetooth)");
         return;
@@ -245,6 +255,18 @@ export function createMockEngineApi(
     onDevices: (handler) => subscribe(devicesHandlers, handler),
     simulateAlert: (alert) => alertHandlers.forEach((h) => h(alert)),
     simulateLinkLoss: (lastError) => drop(lastError),
+    simulateTakeover: () => {
+      stopWalk();
+      payload = null;
+      publishStatus({
+        state: "disconnected",
+        deviceName,
+        address,
+        remembered: rememberedFor(address),
+        reason: "takenOver",
+        lastError: "An existing connection was forcibly closed by the remote host",
+      });
+    },
     failNextConnect: (reason) => {
       pendingFailure = reason;
     },

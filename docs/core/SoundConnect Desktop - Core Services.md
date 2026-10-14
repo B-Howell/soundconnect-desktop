@@ -60,21 +60,25 @@ Disconnected -> Discovering -> Connecting{address, uuid_index, deadline}
              -> Initialising -> Ready -> Disconnected(lastError)
 ```
 
-- **Idle at launch** (since round 2) - with the `autoConnect` setting off (the
-  default) the service publishes `Disconnected` plus the remembered profile and
-  does nothing else until the user sends `connect`, `reconnect` or `scan`; see
-  [Contract changes 2026-10-12 (round 2)](#contract-changes-2026-10-12-round-2).
-- **Idle Windows check** (0.1.9) - while not connected and not discovering
-  (auto-connect off, or suspended by `disconnect`), every `discovery_interval`
-  (3 s) one `devices()` call, nothing else: no RFCOMM connect, no inquiry for
-  new devices. It sets `windowsConnected` in `engine:status` (see
-  [Contract changes 0.1.9](#contract-changes-019-windowsconnected)).
-- **Discovering** (`autoConnect` on) - every `discovery_interval` (3 s since
-  0.1.9, was 2 s) call
-  `devices()` and pick the most recently seen remembered device, else the
-  first whose name starts with `WH-`, `WF-` or `LinkBuds`. Upstream's backend
-  lists only devices Windows has connected, so nothing is paged while the
-  headphones are off.
+- **Idle at launch** - the service publishes `Disconnected` plus the
+  remembered profile (and `autoConnect`, the setting). With nothing
+  remembered it never connects by itself, whatever the setting.
+- **Idle Windows check** (0.1.9; the only automatic trigger since 0.1.11) -
+  while not connected, every `discovery_interval` (3 s) one `devices()` call:
+  no RFCOMM connect, no inquiry for new devices. It sets `windowsConnected`
+  in `engine:status` (see
+  [Contract changes 0.1.9](#contract-changes-019-windowsconnected)). With
+  `autoConnect` on (the default since 0.1.11), the check that sees the
+  remembered headphones **appear** (not listed -> listed, which includes the
+  first check after launch) connects once to the most recently seen
+  remembered device in the list. There is no retry loop: a failed attempt or
+  a lost link waits for the next appearance or the user's Connect. See
+  [Contract changes 0.1.11](#contract-changes-0111-auto-connect-after-setup-and-the-polite-controller-rule).
+- **Discovering** - only a user's `reconnect` with nothing remembered: one
+  `devices()` pass that picks the first name starting with `WH-`, `WF-` or
+  `LinkBuds` (ending in `notConnectedToWindows` when there is none). Upstream's
+  backend lists only devices Windows has connected, so nothing is paged while
+  the headphones are off.
 - **Connecting** - follows upstream `client/Client.cpp`:
   - order: `connectionAttempt.services = {MDR_SERVICE_UUID_XM5, MDR_SERVICE_UUID_LEGACY};` (line 1064);
   - deadline per attempt: `static constexpr uint64_t kAttemptTimeoutMs = 10'000;` (line 987);
@@ -84,15 +88,18 @@ Disconnected -> Discovering -> Connecting{address, uuid_index, deadline}
     the next UUID (`TryConnectionAttempt`);
   - protocol: `if (std::strcmp(service, MDR_SERVICE_UUID_LEGACY) == 0) return MDR_PROTOCOL_V1;`
     (lines 1014-1015), otherwise V2.
-  All UUIDs exhausted -> `Disconnected` with `lastError`, retried after
-  `retry_backoff` (10 s).
+  All UUIDs exhausted -> `Disconnected` with `lastError` (`busy` or
+  `timeout`), not retried (0.1.11; before, auto-connect retried after 10 s).
 - **Initialising** - `Engine::create(transport, protocol)` then
   `request_init()`; on `InitializeComplete`, `request_sync()` (as upstream's
   `case MDR_EVENT_INITIALIZE_COMPLETE:`); on the first `SyncComplete` ->
   **Ready**. No `SyncComplete` within `init_timeout` (30 s) -> link lost.
 - **Ready** - the tick loop below.
 - Any `poll` error -> link lost: drop the engine (which closes the socket),
-  clear the snapshot, publish `Disconnected{lastError}`, retry after 10 s.
+  clear the snapshot, publish `Disconnected{lastError}` with the reason
+  `link_dropped` classifies (before Ready `refused` / `timeout`; after Ready
+  the setting-change reconnect, plain disconnected when Windows no longer
+  lists the headphones, else `takenOver`), never retried by itself.
   Except `MDR_RESULT_ERROR_MALFORMED_PAYLOAD` (`Error::is_malformed_payload`):
   libmdr could not parse one frame it had already ACKed and consumed, so the
   service logs `engine: skipped a frame libmdr could not parse (#n on this
@@ -114,11 +121,13 @@ Disconnected -> Discovering -> Connecting{address, uuid_index, deadline}
   RFCOMM connection 1.5-2 s later.
 
 `Disconnect` drops the link and pauses auto-connect (status `Disconnected`,
-no `lastError`); `Reconnect` connects to the remembered device (or runs one
-discovery pass); `Connect{address}` drops any link and connects to that
-address if Windows lists it as connected, else fails at once with
-`reason: "notConnectedToWindows"`. A failed manual connect is not retried
-unless `autoConnect` is on.
+no `lastError`) until the user's `connect` / `reconnect`, or until the
+headphones leave Windows' list and come back (switched off and on, or
+disconnected in Bluetooth settings); a relaunch also clears it. `Reconnect`
+connects to the remembered device (or runs one discovery pass);
+`Connect{address}` drops any link and connects to that address if Windows
+lists it as connected, else fails at once with
+`reason: "notConnectedToWindows"`. A failed connect is never retried.
 
 ## Tick loop (Initialising and Ready)
 
@@ -218,7 +227,7 @@ by default when `build.rs` defines no app manifest.
 
 | Event | Payload |
 |---|---|
-| `engine:status` | `{state: "disconnected"|"discovering"|"connecting"|"initialising"|"ready", deviceName?, address?, protocol?: "V1"|"V2", lastError?, reason?, remembered, windowsConnected}` (absent keys omitted; see [`engine:status`](#enginestatus)) |
+| `engine:status` | `{state: "disconnected"|"discovering"|"connecting"|"initialising"|"ready", deviceName?, address?, protocol?: "V1"|"V2", lastError?, reason?, remembered, windowsConnected, autoConnect}` (absent keys omitted; see [`engine:status`](#enginestatus)) |
 | `engine:snapshot` | `{snapshot: Snapshot, noiseView: NoiseView | null}`; `Snapshot` is the renderer contract from the bindings doc |
 | `engine:alert` | `{message, autoResponse: "negative" | null, requiresChoice: boolean}` |
 
@@ -332,6 +341,9 @@ its next mount. `settings::load` gives the defaults (`system`, false, false,
 true, as `SETTINGS_DEFAULTS`) for a missing, unreadable or non-object file,
 and keeps each field only when its type is right (a theme outside
 system / light / dark falls back), like the renderer's `sanitizeSettings`.
+Since 0.1.11 the file carries `settingsVersion` and `autoConnect` defaults
+to true; an older file is migrated and rewritten once (see
+[Contract changes 0.1.11](#autoconnect-default-and-migration)).
 On a first launch the file does not exist yet, so the defaults apply until
 the renderer writes it moments later.
 
@@ -364,9 +376,11 @@ and `MouseButtonState::Up` shows the window; the right button opens the menu).
   else the lower earbud; then Noise cancelling / Wind noise reduction /
   Ambient sound / Noise control off). Otherwise `SoundConnect · <state>`,
   where `state_label` mirrors the renderer's `connectionCopy` from the
-  status's `remembered`, `windowsConnected` and `reason` (0.1.10 copy
-  register): "No headphones set up", "Headphones off or disconnected",
-  "Ready to connect", "Connecting…", "Reconnecting…" or "Connection failed".
+  status's `remembered`, `windowsConnected`, `reason` and (0.1.11)
+  `autoConnect` (0.1.10 copy register): "No headphones set up", "Headphones
+  off or disconnected", "Ready to connect" (auto-connect off only),
+  "Disconnected" (the same with auto-connect on), "Another app has control"
+  (`takenOver`), "Connecting…", "Reconnecting…" or "Connection failed".
   Capped at 127 characters, the Windows limit.
 - Menu (`noise_menu_model`): with a `noiseView`, `CheckMenuItem`s in the
   renderer's order and with its labels: Noise cancelling (`canCancel`), Wind
@@ -671,7 +685,9 @@ idle by default, remembers devices, and never writes without a user command.
 
 ### Settings
 
-`settings.json` gains `autoConnect: boolean`, default **false**. The service
+`settings.json` gains `autoConnect: boolean`, default **false** (default
+**true** since 0.1.11, see
+[Contract changes 0.1.11](#contract-changes-0111-auto-connect-after-setup-and-the-polite-controller-rule)). The service
 reads it once at launch (`ServiceConfig::auto_connect`). `settings_write` takes
 the old four fields plus an optional `autoConnect`; a payload without it keeps
 the stored value, and a changed value is forwarded to the service as
@@ -683,9 +699,12 @@ the stored value, and a changed value is forwarded to the service as
   [Contract changes 0.1.9](#contract-changes-019-windowsconnected)). It
   connects only when asked (`connect`, `reconnect`), and a failure is not
   retried.
-- `autoConnect: true`: the old behaviour (discover every `discovery_interval`,
-  3 s since 0.1.9, retry after 10 s, or at once when Windows starts listing
-  the headphones), preferring the most recently seen remembered device.
+- `autoConnect: true`: in round 2 the old behaviour (discover every
+  `discovery_interval`, 3 s since 0.1.9, retry after 10 s, or at once when
+  Windows starts listing the headphones), preferring the most recently seen
+  remembered device. **Superseded in 0.1.11**: no retries at all; it connects
+  only when the remembered headphones appear in Windows' list (see
+  [Contract changes 0.1.11](#contract-changes-0111-auto-connect-after-setup-and-the-polite-controller-rule)).
 
 ### Remembered profiles
 
@@ -730,7 +749,7 @@ and `remember_never_replaces_known_values_with_empty_or_the_address`.
 
 ```ts
 type FailureReason = "notConnectedToWindows" | "busy" | "timeout" | "refused"
-                   | "reconnectingAfterSettingChange";
+                   | "takenOver" | "reconnectingAfterSettingChange";
 type Profile = { address: string; name: string; modelName: string;
                  firmware: string; protocol: "V1" | "V2"; lastSeen: number };
 type Status = {
@@ -740,6 +759,7 @@ type Status = {
   reason?: FailureReason;     // after a failed connection attempt, or while reconnecting after a setting change
   remembered: Profile | null; // always present
   windowsConnected: boolean;  // always present since 0.1.9
+  autoConnect: boolean;       // the setting, always present since 0.1.11
 };
 ```
 
@@ -757,10 +777,13 @@ returns).
 | `busy` | Windows lists the device as connected but every service UUID's socket connect failed: another controller holds the control channel. |
 | `timeout` | a connect attempt or init + sync did not finish in time. |
 | `refused` | the device closed the link, or libmdr failed to start, before Ready. |
+| `takenOver` | (0.1.11) the link was lost after Ready while Windows still lists the headphones, with no user `disconnect` and no setting-change reconnect: another controller (the Sony phone app) took the one control channel. Nothing reconnects by itself (see [The polite controller rule](#the-polite-controller-rule-0111)). |
 | `reconnectingAfterSettingChange` | with `connecting` / `initialising`: the headset dropped the link right after a connection-quality (or Speak-to-Chat / DSEE) change and the service is reconnecting by itself (see [State machine](#state-machine)). Not a failure. |
 
-A link that drops after Ready has `lastError` but no `reason`, unless it
-dropped right after a setting change (above).
+A link that drops after Ready has `lastError` and, since 0.1.11, `takenOver`
+while Windows still lists the headphones (`busy` when the user took control
+back less than 10 s before); no `reason` when Windows no longer lists them
+(switched off); the setting-change reconnect right after a setting change.
 
 ### Commands (`engine_send`)
 
@@ -769,10 +792,10 @@ dropped right after a setting change (above).
 | `scan` | - | lists the devices Windows has connected -> `engine:devices`. Never connects. Works in every state. |
 | `connect` | `address` | drops any link and connects now (works from idle). |
 | `forgetDevice` | `address` | deletes the profile; when it is the connected device, also drops the link and stays disconnected. The status is re-published with the new `remembered`. |
-| `setAutoConnect` | `enabled` | stores the setting and applies it now: `true` starts discovery at once; `false` stops discovering (an existing link stays). |
+| `setAutoConnect` | `enabled` | stores the setting and re-publishes the status with it. Switching it on (from off) counts as an appearance: one connect if the remembered headphones are listed and nothing blocks it; the renderer's push of an unchanged value at start does nothing. `false` leaves an existing link. |
 | `openBluetoothSettings` | - | opens `ms-settings:bluetooth` through the opener plugin (handled in `commands.rs`, not on the engine thread). |
-| `reconnect` | - | connects to the latest remembered profile; without one, one discovery pass (ends in `notConnectedToWindows` when nothing is found and auto-connect is off). |
-| `disconnect` | - | as before; pauses auto-connect until `connect` / `reconnect`. |
+| `reconnect` | - | connects to the latest remembered profile; without one, one discovery pass (ends in `notConnectedToWindows` when nothing is found). Clears a takeover (one attempt to take control back). |
+| `disconnect` | - | drops the link; pauses auto-connect until `connect` / `reconnect` or until the headphones leave Windows' list and come back. |
 
 ### `engine:devices`
 
@@ -837,6 +860,122 @@ and `auto_connect_connects_when_windows_lists_the_headset` (Discovering with
 helper `states()` now folds repeated states, since a `windowsConnected`
 change re-publishes the same state.
 
+## Contract changes 0.1.11: auto-connect after setup and the polite controller rule
+
+The maintainer: "If the app detects the headphones are connected to the
+computer, after being set up once with the app they should connect
+automatically." And, with multipoint on and the phone app open: "the phone
+app and our app are fighting nonstop for control, constantly disconnecting
+each other." 0.1.11 does both: connect by itself once, at the right moments,
+and never as a retry.
+
+### `autoConnect` default and migration
+
+- Default **on**, in both copies: `SETTINGS_DEFAULTS.autoConnect` in the
+  renderer store and `AppSettings::default()` /
+  `ServiceConfig::default()` in [settings.rs](<../../src-tauri/src/settings.rs>)
+  and [engine_service.rs](<../../src-tauri/src/engine_service.rs>).
+  Finishing the setup wizard sets it on explicitly (`useSetupWizard.finish`),
+  even after the user had switched it off. Settings > Headphones >
+  "Connect automatically" turns it off.
+- Without a remembered device it does nothing, so a first run never connects
+  to some Sony headset before setup.
+- **Migration, once.** 0.1.10 and earlier never recorded a user's choice:
+  they always stored the old default `false`. So a pre-0.1.11 value cannot be
+  told apart from a choice and is turned on once, in both copies:
+  - `settings.json` gains `settingsVersion` (`SETTINGS_VERSION` = 2). A file
+    without it (or older) loads with `autoConnect: true` and is rewritten
+    once at launch by `settings::load_from` (`settings: migrated ... to
+    version 2 (autoConnect on)`), so the engine auto-connects from the very
+    first 0.1.11 launch, before the renderer mounts. Every later write
+    carries version 2, and a stored value is never changed again.
+  - The renderer's persisted store goes from zustand version 1 to 2;
+    `migrateSettings` sets `autoConnect: true` for a version 1 entry. The
+    renderer then pushes its value (`setAutoConnect`) as before, and remains
+    the source of truth.
+  A user who had deliberately left it off in 0.1.10 gets it on once and can
+  switch it off again; from then on that choice sticks (tests below).
+
+### When the engine connects by itself
+
+Only on an **appearance**: the 3 s Windows check sees the remembered
+headphones go from not listed to listed (the first check after launch counts,
+since the service starts with `windowsConnected: false`), or the user
+switches the setting on while they are listed. Never as a retry after a
+failed attempt or a lost link. Blocked while any of these holds:
+
+| block | set by | cleared by |
+|---|---|---|
+| user pause (`suspended`) | the user's `disconnect` (or forgetting the connected device) | `connect`, `reconnect`, switching auto-connect on, the headphones leaving Windows' list, relaunch |
+| takeover (`taken_over`) | a `takenOver` (or quick `busy`) drop | `connect` / `reconnect` (one attempt), the headphones leaving Windows' list, relaunch |
+| setting-change reconnect | its own window | its end |
+
+So after the user's Disconnect the app stays disconnected while the
+headphones stay connected to Windows; switching them off and on (or
+reconnecting them in Bluetooth settings) lets auto-connect connect again.
+
+### The polite controller rule (0.1.11)
+
+`link_dropped` classifies every lost link:
+
+1. Before Ready: `refused` / `timeout`, as before. No retry.
+2. After Ready, within `RECOVERY_TRIGGER` (10 s) of a connection-quality,
+   Speak-to-Chat or DSEE command, and not within `SECOND_DROP_WINDOW` (60 s)
+   of the last such drop: the setting-change reconnect (unchanged, 20 s).
+3. Windows no longer lists the headphones (one fresh `devices()` call):
+   plain `disconnected` with no reason ("Headphones off or disconnected");
+   their next appearance auto-connects.
+4. Otherwise Windows still lists them and nothing of ours closed the link:
+   another controller took it. `disconnected`, `reason: "takenOver"`,
+   `taken_over` set; log `engine: <address> still listed by Windows: taken
+   over by another controller; no automatic reconnect ...`. A failed device
+   list counts as listed (the polite choice). A second drop within 60 s of a
+   setting-change drop lands here too, so the two apps cannot take turns
+   through the setting-change reconnect.
+5. The user's Connect after a takeover is one attempt (`retake`). If that
+   link drops again within `RETAKE_WINDOW` (10 s) of Ready, or the attempt
+   fails, the service stays taken over and reports `busy`: "Connection
+   failed" / "Another app is using the headphones.".
+
+Copy (Renderer, Copy register; `state_label` in [tray.rs](<../../src-tauri/src/tray.rs>)):
+`takenOver` while listed is "Another app has control" with Connect;
+Windows no longer listing them is "Headphones off or disconnected" (the 0.1.9
+rule drops the reason when Windows' state changes). "Ready to connect" shows
+only with auto-connect off; with it on, a listed, idle device (after the
+user's Disconnect) is "Disconnected".
+
+Known race: when the headphones switch off, RFCOMM can drop a moment before
+Windows stops listing them, so the drop is classified `takenOver` and "Another
+app has control" shows for up to one check (3 s) until the list changes; the
+change clears the takeover and the next appearance connects as usual.
+
+### Tests
+
+[engine_service.rs](<../../src-tauri/src/engine_service.rs>), with
+`ListedReplay.take_over` (a scripted mid-session close: the next `recv`
+fails once with WSAECONNRESET's text while Windows keeps listing the
+headset) and a harness that seeds the replayed device as remembered whenever
+auto-connect is on:
+`auto_connect_connects_when_windows_lists_the_headset` (nothing tried while
+unlisted, Ready on the appearance, status carries `autoConnect`),
+`replayed_xm3_reaches_ready_and_publishes_its_snapshot` (now Disconnected,
+Connecting, Initialising, Ready: no Discovering),
+`a_drop_while_windows_lists_the_headset_is_taken_over_and_never_reconnects`,
+`after_a_takeover_the_headset_leaving_and_reappearing_auto_connects` (one
+attempt, both UUIDs),
+`user_connect_takes_control_back_and_a_quick_second_takeover_is_busy`,
+`a_second_drop_within_60_s_of_a_setting_change_drop_is_a_takeover`,
+`user_disconnect_pauses_auto_connect_until_the_headset_cycles_in_windows`,
+`auto_connect_without_a_remembered_headset_never_connects`, and
+`a_drop_without_a_setting_change_does_not_reconnect_with_auto_connect_off`
+(now `takenOver`). [settings.rs](<../../src-tauri/src/settings.rs>):
+`migration_turns_auto_connect_on_once_and_keeps_a_later_user_choice` (the
+exact file 0.1.10 wrote) and
+`a_missing_file_auto_connects_and_is_not_created_by_load`.
+[tray.rs](<../../src-tauri/src/tray.rs>): `tooltip_when_not_ready`
+("Disconnected", "Another app has control"). Renderer tests: see the
+Renderer doc.
+
 ## Updates (0.1.9)
 
 The maintainer asked for "a normal app update sequence": a new GitHub release
@@ -887,12 +1026,36 @@ the updater api mocked.
 
 ## Coexisting with the Sony phone app
 
-Both controllers can write. The XM4 accepts settings from the phone (Sony
-Sound Connect, over its own Bluetooth link) and from this app at the same
-time; it applies whichever arrives last and notifies every connected
-controller with a `*_NTFY_PARAM`. Last writer wins. This app only mirrors
-those notifications; it never writes unless the user changed something in
-this app (window or tray).
+**One controller at a time** (0.1.11). The headphones' control channel is
+one RFCOMM session: with multipoint on, the PC keeps playing audio while the
+phone app (Sony Sound Connect) opens its own control session, and the
+headset then closes this app's link. The maintainer saw the two apps
+"fighting nonstop for control, constantly disconnecting each other": the
+0.1.10 engine reconnected within seconds (auto-connect's retry and the
+setting-change reconnect), which pushed the phone app off, which reconnected,
+and so on. Since 0.1.11 the app never fights for the link (the
+[polite controller rule](#the-polite-controller-rule-0111)): a drop while
+Windows still lists the headphones is `takenOver`, the window and tray say
+"Another app has control", and nothing reconnects until the user selects
+Connect, the headphones leave and re-enter Windows' list, or the app
+restarts. Connect takes control back; the phone app then loses it until it
+reconnects. A change made in the phone app is visible here after you
+reconnect: the app reads every setting fresh at connect (`request_init` /
+`request_sync`).
+
+Evidence: the hypothesis (one control session; the headset closes ours when
+the phone opens its own) matches the maintainer's report and the observed
+drop shape (a socket error with no user action while Windows still lists the
+device) but has not yet been captured in a packet log with the phone app
+active; the replay tests below script exactly that close. While both are
+connected (between a takeover and the next appearance, or if the headset
+does accept two sessions), the rest of this section still holds: last writer
+wins and this app never writes unless the user changed something in it.
+
+Below, the 2026-10-12 write-loop fix. The XM4 applies whichever controller's
+setting arrives last and notifies every connected controller with a
+`*_NTFY_PARAM`. This app only mirrors those notifications; it never writes
+unless the user changed something in this app (window or tray).
 
 ### What was wrong
 

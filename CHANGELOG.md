@@ -5,6 +5,21 @@ workflow uses the section matching a tag (`## 0.1.9` for `v0.1.9`) as the
 "What's new" part of the GitHub Release notes (`tools/release-notes.ps1`)
 and as the in-app updater's release notes.
 
+## 0.1.11 - 2026-10-14
+
+- **Connects by itself after setup**: once the headphones are set up, they
+  connect as soon as Windows connects to them, at startup and whenever they
+  come back. "Connect automatically" is now on by default and finishing
+  setup turns it on; existing installs get it on once with this update.
+  Turn it off in Settings > Headphones.
+- **No more fighting with the Sony phone app**: the headphones accept one app
+  at a time. When the phone app takes control, SoundConnect says "Another app
+  has control" and stays off the link until you select Connect or the
+  headphones are switched off and on. It no longer reconnects in a loop.
+- After you select Disconnect, SoundConnect stays disconnected until you
+  select Connect or the headphones disconnect from Windows and come back.
+- "Ready to connect" now shows only when "Connect automatically" is off.
+
 ## 0.1.10 - 2026-10-14
 
 - **Shorter, plainer wording everywhere**: each status is one line,

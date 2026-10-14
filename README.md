@@ -70,8 +70,10 @@ Grouped the way the app's left rail is:
 - **Tray**: name and battery in the tooltip, quick noise control without
   opening the window.
 
-The app only sends a setting to the headphones when you change one, so it can
-run alongside the Sony phone app (whichever changes a setting last wins).
+Once set up, the headphones connect by themselves whenever Windows connects
+to them (Settings > Connect automatically turns that off). The headphones
+accept one app at a time; SoundConnect releases control to the phone app and
+reconnects when you ask.
 
 ## Supported headphones
 
@@ -153,6 +155,13 @@ contracts and verification evidence starts at the
 [Documentation Home](<docs/SoundConnect Desktop - Documentation Home.md>).
 
 ## Known limitations
+
+- **One app at a time**: the headphones accept one controlling app at a
+  time. When the Sony phone app takes control, SoundConnect shows "Another
+  app has control" and does not reconnect by itself (so the two never fight
+  over the link); select Connect to take control back, or switch the
+  headphones off and on. A change made in the phone app shows up after you
+  reconnect. Simultaneous use with the phone app is not supported.
 
 - **WH-1000XM4 paired-device actions**: the list of paired devices is
   read-only on the XM4 (protocol V1); the engine refuses connect, disconnect

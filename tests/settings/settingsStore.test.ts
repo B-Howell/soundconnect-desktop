@@ -5,6 +5,7 @@ import {
   createSettingsStore,
   SETTINGS_DEFAULTS,
   SETTINGS_STORAGE_KEY,
+  SETTINGS_VERSION,
   sanitizeSettings,
 } from "../../src/state/settingsStore";
 import { shortCommit } from "../../src/lib/buildInfo";
@@ -86,6 +87,33 @@ describe("settingsStore", () => {
       checkForUpdates: false,
       lastUpdateCheck: 1234,
     });
+  });
+
+  it("defaults to auto-connect on", () => {
+    const store = createSettingsStore(safeStorage(() => fakeStorage()));
+    expect(store.getState().autoConnect).toBe(true);
+  });
+
+  it("migrates a 0.1.10 entry (version 1) to auto-connect on once, then keeps the user's choice", () => {
+    const storage = fakeStorage();
+    // What 0.1.10 stored: version 1 with the old default.
+    storage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        state: { theme: "dark", startWithWindows: true, keepRunningInTray: true, startMinimized: false, onboardingDone: true, autoConnect: false },
+        version: 1,
+      }),
+    );
+    const migrated = createSettingsStore(safeStorage(() => storage));
+    expect(migrated.getState()).toMatchObject({ autoConnect: true, theme: "dark", startWithWindows: true, onboardingDone: true });
+    // The user switches it off; the stored version 2 entry is respected from then on.
+    migrated.getState().setAutoConnect(false);
+    expect(JSON.parse(storage.data.get(SETTINGS_STORAGE_KEY) ?? "null")).toMatchObject({
+      version: SETTINGS_VERSION,
+      state: { autoConnect: false },
+    });
+    expect(createSettingsStore(safeStorage(() => storage)).getState().autoConnect).toBe(false);
+    expect(createSettingsStore(safeStorage(() => storage)).getState().autoConnect).toBe(false);
   });
 
   it("survives a storage whose every call throws", () => {

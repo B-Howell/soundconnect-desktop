@@ -51,6 +51,8 @@ describe("remembered headphones at launch", () => {
 
   it("say they are not connected and wait for Connect instead of searching", async () => {
     const user = userEvent.setup();
+    // Auto-connect off: the only state that says "Ready to connect".
+    useSettingsStore.getState().setAutoConnect(false);
     const { api, store } = rememberedStore();
     renderWithStore(<AppRoot />, store);
 
@@ -147,14 +149,69 @@ describe("setup while headphones are remembered", () => {
   });
 });
 
+describe("auto-connect on and the polite controller rule", () => {
+  it("says Disconnected instead of Ready to connect while auto-connect is on", () => {
+    const store = createEngineStore(spyApi());
+    store.getState().receiveStatus({ state: "disconnected", remembered, windowsConnected: true, autoConnect: true });
+    renderWithStore(<AppRoot />, store);
+    const page = screen.getByRole("region", { name: "Status" });
+    expect(page).toHaveTextContent("Disconnected");
+    expect(page).not.toHaveTextContent("Ready to connect");
+    expect(screen.getByRole("complementary")).toHaveTextContent("Disconnected");
+  });
+
+  it("shows Another app has control after a takeover, and Connect takes it back", async () => {
+    const user = userEvent.setup();
+    const { api, store } = rememberedStore();
+    act(() =>
+      store.getState().receiveStatus({
+        state: "disconnected",
+        address: XM4,
+        remembered,
+        windowsConnected: true,
+        autoConnect: true,
+        reason: "takenOver",
+        lastError: "An existing connection was forcibly closed by the remote host",
+      }),
+    );
+    renderWithStore(<AppRoot />, store);
+    const page = screen.getByRole("region", { name: "Status" });
+    expect(page).toHaveTextContent("Another app has control");
+    // One line: not a failure card, no reason line, no raw error.
+    expect(page.querySelector(".remembered-device__advice")).toBeNull();
+    expect(page).not.toHaveTextContent("forcibly");
+    expect(screen.getByRole("complementary")).toHaveTextContent("Another app has control");
+    await user.click(within(page).getByRole("button", { name: "Connect" }));
+    expect(api.send).toHaveBeenLastCalledWith({ type: "connect", address: XM4 });
+    // Taken again within 10 s: the engine reports busy, a real failure.
+    act(() =>
+      store.getState().receiveStatus({ state: "disconnected", address: XM4, remembered, windowsConnected: true, autoConnect: true, reason: "busy" }),
+    );
+    expect(page).toHaveTextContent("Connection failed");
+    expect(page).toHaveTextContent("Another app is using the headphones.");
+  });
+
+  it("is off or disconnected, not taken over, once Windows stops listing them", () => {
+    const store = createEngineStore(spyApi());
+    store.getState().receiveStatus({ state: "disconnected", remembered, windowsConnected: false, autoConnect: true, reason: "takenOver" });
+    renderWithStore(<AppRoot />, store);
+    expect(screen.getByRole("region", { name: "Status" })).toHaveTextContent("Headphones off or disconnected");
+  });
+});
+
 describe("Settings: Headphones", () => {
-  it("sends setAutoConnect when Connect automatically is switched, and stores it", async () => {
+  it("shows Connect automatically on by default and switches it off, sending setAutoConnect", async () => {
     const user = userEvent.setup();
     const { api, store } = rememberedStore();
     useNavStore.getState().setPage("settings");
     renderWithStore(<AppRoot />, store);
     const toggle = screen.getByRole("switch", { name: "Connect automatically" });
+    expect(toggle).toBeChecked();
+    await expect.poll(() => commands(api)[0]).toEqual({ type: "setAutoConnect", enabled: true });
+    await user.click(toggle);
     expect(toggle).not.toBeChecked();
+    expect(useSettingsStore.getState().autoConnect).toBe(false);
+    await expect.poll(() => commands(api).slice(-1)[0]).toEqual({ type: "setAutoConnect", enabled: false });
     await user.click(toggle);
     expect(useSettingsStore.getState().autoConnect).toBe(true);
     await expect.poll(() => commands(api).slice(-1)[0]).toEqual({ type: "setAutoConnect", enabled: true });

@@ -7,6 +7,9 @@ import type { ConnectFailureReason } from "../../lib/engine/types";
  * `offline` is a remembered device Windows does not list as connected (off or
  * out of range). `idle` is one Windows lists but the engine is not connecting
  * to (auto-connect off): nothing happens until the user selects Connect.
+ * `disconnected` is the same with auto-connect on (the user disconnected; the
+ * engine waits until they leave and re-enter Windows' list). `takenOver` is
+ * one another app (the Sony phone app) took control of; Connect takes it back.
  * `searching` is nothing remembered ("No headphones set up"). `error` is only
  * a connect attempt that failed while Windows listed the device.
  */
@@ -14,6 +17,8 @@ export type ConnectionView =
   | { kind: "searching"; deviceName?: string }
   | { kind: "offline"; deviceName: string }
   | { kind: "idle"; deviceName: string }
+  | { kind: "disconnected"; deviceName: string }
+  | { kind: "takenOver"; deviceName: string }
   | {
       kind: "connecting";
       deviceName: string;
@@ -50,6 +55,10 @@ export function connectionCopy(view: ConnectionView): ConnectionCopy {
       return { title: "Headphones off or disconnected" };
     case "idle":
       return { title: "Ready to connect" };
+    case "disconnected":
+      return { title: "Disconnected" };
+    case "takenOver":
+      return { title: "Another app has control" };
     case "connecting":
       return { title: view.reconnecting ? "Reconnecting…" : "Connecting…" };
     case "error": {

@@ -47,7 +47,7 @@ describe("setup wizard", () => {
     expect(screen.queryByRole("navigation", { name: "Pages" })).toBeNull();
     expect(screen.getByText(/Not affiliated with, endorsed by, or supported by Sony/)).toBeInTheDocument();
     expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
-    await expect.poll(() => sentTypes(api)).toEqual([{ type: "setAutoConnect", enabled: false }]);
+    await expect.poll(() => sentTypes(api)).toEqual([{ type: "setAutoConnect", enabled: true }]);
 
     // Pair with Windows: over-ear first; earbuds switch; the button opens Windows' page.
     await user.click(screen.getByRole("button", { name: "Get started" }));
@@ -104,8 +104,28 @@ describe("setup wizard", () => {
     expect(document.querySelector("img.device-image[data-model=\"WH-1000XM4\"]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(useSettingsStore.getState().onboardingDone).toBe(true);
+    expect(useSettingsStore.getState().autoConnect).toBe(true);
     expect(screen.getByRole("navigation", { name: "Pages" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Status" })).toBeInTheDocument();
+  });
+
+  it("turns auto-connect on when setup is finished, even after it was switched off", async () => {
+    const user = userEvent.setup();
+    useSettingsStore.getState().setAutoConnect(false);
+    const { api, store } = firstRunStore();
+    useSetupStore.getState().openSetup("choose");
+    renderWithStore(<AppRoot />, store);
+    await expect.poll(() => sentTypes(api)).toEqual([{ type: "setAutoConnect", enabled: false }]);
+    await user.click(screen.getByRole("button", { name: "Scan" }));
+    act(() => store.getState().receiveDevices({ devices: [{ address: XM4, name: "WH-1000XM4", remembered: false }] }));
+    await user.click(screen.getByRole("button", { name: /WH-1000XM4/ }));
+    act(() => {
+      store.getState().receiveStatus({ state: "ready", deviceName: "WH-1000XM4", address: XM4, protocol: "V1" });
+      store.getState().receiveSnapshot(xm4());
+    });
+    await user.click(await screen.findByRole("button", { name: "Done" }));
+    expect(useSettingsStore.getState().autoConnect).toBe(true);
+    await expect.poll(() => sentTypes(api).slice(-1)[0]).toEqual({ type: "setAutoConnect", enabled: true });
   });
 
   it.each<[ConnectFailureReason, string]>([
