@@ -168,7 +168,8 @@ pub fn state_label(s: &TraySummary) -> &'static str {
                 s.reason,
                 Some(FailureReason::Busy | FailureReason::Timeout | FailureReason::Refused)
             );
-            if (attempt_failed && listed) || (!s.remembered && (s.reason.is_some() || s.last_error)) {
+            if (attempt_failed && listed) || (!s.remembered && (s.reason.is_some() || s.last_error))
+            {
                 "Connection failed"
             } else if !s.remembered {
                 "No headphones set up"
@@ -527,16 +528,25 @@ mod tests {
         s.state = ConnState::Disconnected;
         assert_eq!(tooltip_text(&s), "SoundConnect · Ready to connect");
         s.windows_connected = false;
-        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        assert_eq!(
+            tooltip_text(&s),
+            "SoundConnect · Headphones off or disconnected"
+        );
         s.state = ConnState::Discovering;
-        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        assert_eq!(
+            tooltip_text(&s),
+            "SoundConnect · Headphones off or disconnected"
+        );
         s.windows_connected = true;
         assert_eq!(tooltip_text(&s), "SoundConnect · Connecting…");
         s.state = ConnState::Disconnected;
         s.reason = Some(FailureReason::Busy);
         assert_eq!(tooltip_text(&s), "SoundConnect · Connection failed");
         s.reason = Some(FailureReason::NotConnectedToWindows);
-        assert_eq!(tooltip_text(&s), "SoundConnect · Headphones off or disconnected");
+        assert_eq!(
+            tooltip_text(&s),
+            "SoundConnect · Headphones off or disconnected"
+        );
         s.reason = None;
         s.remembered = false;
         assert_eq!(tooltip_text(&s), "SoundConnect · No headphones set up");

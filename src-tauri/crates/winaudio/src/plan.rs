@@ -8,17 +8,13 @@ use crate::model::{
 };
 
 /// Shown when spatial sound reads as on; Windows has no supported setter.
-pub const NOTE_SPATIAL: &str =
-    "Spatial sound is on. Turn it off in Windows Settings.";
+pub const NOTE_SPATIAL: &str = "Spatial sound is on. Turn it off in Windows Settings.";
 /// Shown with "Mono audio with mic".
-pub const NOTE_CALLS_MONO: &str =
-    "Sound is mono while an app uses the mic.";
+pub const NOTE_CALLS_MONO: &str = "Sound is mono while an app uses the mic.";
 /// Shown when Hands-Free is needed but the headphones do not offer it.
-pub const NOTE_NO_HANDS_FREE: &str =
-    "These headphones don't offer a mic to this PC.";
+pub const NOTE_NO_HANDS_FREE: &str = "These headphones don't offer a mic to this PC.";
 /// Shown when stereo mode has to move the mic off the headphones but no other mic exists.
-pub const NOTE_NO_OTHER_MIC: &str =
-    "No other microphone found. Calls will have no mic.";
+pub const NOTE_NO_OTHER_MIC: &str = "No other microphone found. Calls will have no mic.";
 /// Shown when the stereo endpoint is not active, so defaults cannot point at it.
 pub const NOTE_NOT_CONNECTED: &str =
     "Headphones off or disconnected. Default devices can't change now.";
