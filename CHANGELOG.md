@@ -21,6 +21,12 @@ GitHub Release notes.
   seconds and, with automatic connection on, connects as soon as they
   appear.
 - The headphones' picture, name and status are centred in the left rail.
+- **Updates itself**: SoundConnect checks GitHub once a day (Settings >
+  Updates) and offers each new version in a banner with Install now, Later
+  and Release notes; it downloads, installs and restarts by itself. This is
+  the first version that can; 0.1.8 users install 0.1.9 by hand once.
+- Release pages now start with three install steps and a fixed-name
+  **SoundConnect-Desktop-Setup.exe**; the README links straight to it.
 - Public README with screenshots, install guide and credits; CONTRIBUTING
   guide; tag-driven release workflow.
 - Settings and the remembered device are now stored in a new folder

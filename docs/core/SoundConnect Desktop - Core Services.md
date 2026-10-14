@@ -831,6 +831,54 @@ and `auto_connect_connects_when_windows_lists_the_headset` (Discovering with
 helper `states()` now folds repeated states, since a `windowsConnected`
 change re-publishes the same state.
 
+## Updates (0.1.9)
+
+The maintainer asked for "a normal app update sequence": a new GitHub release
+should install from inside the app. 0.1.9 is the first version that can;
+0.1.8 users install 0.1.9 by hand once, after that 0.1.10 and later arrive
+in-app.
+
+- **Plugins**: `tauri-plugin-updater =2.13.3` and `tauri-plugin-process
+  =2.4.0`, registered in [lib.rs](<../../src-tauri/src/lib.rs>);
+  [capabilities/default.json](<../../src-tauri/capabilities/default.json>)
+  grants `updater:default` (check, download, install) and
+  `process:allow-restart`.
+- **Config** ([tauri.conf.json](<../../src-tauri/tauri.conf.json>)):
+  `plugins.updater.pubkey` (the minisign public key), `endpoints:
+  ["https://github.com/B-Howell/soundconnect-desktop/releases/latest/download/latest.json"]`
+  (GitHub redirects `latest` to the newest non-draft release),
+  `windows.installMode: "passive"` (the NSIS installer shows progress only),
+  and `bundle.createUpdaterArtifacts: true` so the build writes
+  `<installer>.sig`.
+- **Manifest**: the release job writes `latest.json` (Build Toolchain,
+  Releases). The plugin compares its `version` with the running one, downloads
+  `platforms.windows-x86_64.url`, and refuses it unless the signature verifies
+  against `pubkey`.
+- **Flow** (renderer, see Renderer, Updates): a few seconds after launch,
+  once a day while "Check for updates automatically" is on (default), or on
+  Settings > Updates > Check now, `check()`; a found update shows a banner
+  (Install now / Later / Release notes); Install now downloads with a
+  progress bar, runs the installer, which closes the app and, by the plugin's
+  default, starts it again; `relaunch()` follows in case it did not.
+  Offline and signature failures show as plain sentences.
+- **Keys**: generated 2026-10-14 with `pnpm tauri signer generate` into
+  `%APPDATA%\soundconnect-signing\` on the maintainer's PC, password in
+  `PASSWORD.txt` there; both stored as the repository secrets
+  `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Never
+  in the repository.
+- **Rotating the key**: installed apps trust only the `pubkey` they were
+  built with. To rotate, generate a new pair, put the new public key in
+  `tauri.conf.json`, and ship that version **signed with the old key** (keep
+  the old secrets for that one release); once users run it, replace the
+  secrets with the new private key and password. If the old key is lost,
+  that bridge is impossible: users must download the next installer by hand.
+
+Verification: `pnpm tauri signer verify` does not exist in CLI 2.12; the
+check is that the `.sig` in `latest.json` equals the uploaded `.sig` asset
+and that the updater accepts it (the app's own install). Tests:
+[UpdateBanner.test.tsx](<../../tests/updates/UpdateBanner.test.tsx>) with
+the updater api mocked.
+
 ## Coexisting with the Sony phone app
 
 Both controllers can write. The XM4 accepts settings from the phone (Sony

@@ -2860,6 +2860,49 @@ adjusted.
 - Not verified: the real Tauri window against the round-2 engine with the
   XM4 (the opener plugin's Bluetooth page, a real `busy` from the phone).
 
+### Updates (0.1.9)
+
+The renderer side of in-app updates ([Core Services, Updates](<../core/SoundConnect Desktop - Core Services.md#updates-019>)):
+
+- [api.ts](<../../src/lib/updater/api.ts>): `UpdaterApi` (`check`,
+  `relaunch`) and `AvailableUpdate` (`version`, `notes`, `install(onProgress)`
+  with the fraction done), `tauriUpdaterApi` over the plugins (loaded by
+  dynamic import), `noUpdaterApi` in the browser, `updateErrorText` (offline
+  and signature failures in plain words) and `releasePageUrl`.
+- [updaterStore.ts](<../../src/state/updaterStore.ts>): `createUpdaterStore(api)`,
+  phases `idle`, `checking`, `upToDate`, `available`, `downloading`
+  (`progress`), `installing`, `error`; `dismissed` is "Later".
+- [useAutoUpdateCheck](<../../src/hooks/updates/useAutoUpdateCheck.ts>)
+  (in `AppShell`): 5 s after launch, when `checkForUpdates` is on and
+  `lastUpdateCheck` is a day old, records the time and checks. Both settings
+  are new in [settingsStore.ts](<../../src/state/settingsStore.ts>)
+  (`checkForUpdates` default on, `lastUpdateCheck` 0).
+- [UpdateBanner](<../../src/components/updates/UpdateBanner.tsx>)
+  ([UpdateBanner.css](<../../src/components/updates/UpdateBanner.css>), the
+  progress bar; the rest reuses `AlertBanner.css` so it reads as the same
+  banner): "Version X is available" with Release notes / Later / Install now;
+  "Downloading version X…" with a percentage and a `progress` bar;
+  "Installing version X…"; "Update failed" with the sentence, Dismiss and Try
+  again (an alert). Fed by
+  [useUpdateBannerProps](<../../src/hooks/updates/useUpdateBannerProps.ts>)
+  inside [UpdateBannerHost](<../../src/components/updates/UpdateBannerHost.tsx>),
+  which also owns [UpdateNotesSheet](<../../src/components/updates/UpdateNotesSheet.tsx>)
+  ([UpdateNotesSheet.css](<../../src/components/updates/UpdateNotesSheet.css>);
+  the notes from `latest.json` and the release page address). The host sits
+  at the top of every page, above the headphones' alert banner.
+- Settings gains an "Updates" section above About
+  ([UpdateRows.tsx](<../../src/components/settings/UpdateRows.tsx>)):
+  "Check for updates automatically" and "Check for updates" with the state
+  line and Check now (Install now once one is found).
+
+Tests: [UpdateBanner.test.tsx](<../../tests/updates/UpdateBanner.test.tsx>)
+(no banner when up to date; available with the notes sheet and Later; the
+progress bar at 50 % then installing and relaunch; a signature failure as an
+alert with Try again re-installing; offline wording; `updateErrorText`; the
+Settings rows; the daily automatic check and its switch) and
+[settingsStore.test.ts](<../../tests/settings/settingsStore.test.ts>) (the two
+new settings round-trip).
+
 ## Windows audio page
 
 Task 28 built it; Task 31 (0.1.9) redesigned it. A rail page, "Windows

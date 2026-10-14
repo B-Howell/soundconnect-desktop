@@ -1,11 +1,16 @@
 # Tag-driven release. Pushing a tag v<version> (matching package.json and
 # src-tauri/tauri.conf.json) builds the engine DLLs from the pinned upstream submodule
 # exactly as engine.yml does, replays upstream's captures against them, builds the NSIS
-# installer with pnpm dist, and publishes a GitHub Release with:
-#   - SoundConnect Desktop_<version>_x64-setup.exe
+# installer with pnpm dist (signed for the in-app updater with the
+# TAURI_SIGNING_PRIVATE_KEY / _PASSWORD secrets), and publishes a GitHub Release with:
+#   - SoundConnect-Desktop-Setup.exe (fixed name, so
+#     releases/latest/download/SoundConnect-Desktop-Setup.exe always works)
+#   - SoundConnect.Desktop_<version>_x64-setup.exe and its .sig (the updater's download)
+#   - latest.json (the updater's manifest: version, notes, pub_date, signature, url)
 #   - engine-dlls-<upstream-short-sha>.zip (DLLs, import libs, exports, upstream LICENSE)
-#   - SHA256SUMS.txt for both
-# The release notes are the "## <version>" section of CHANGELOG.md.
+#   - SHA256SUMS.txt for all of them
+# The release body comes from tools/release-notes.ps1: install steps, the
+# "## <version>" section of CHANGELOG.md, the developer assets.
 # See docs/tooling/SoundConnect Desktop - Build Toolchain.md (Releases).
 name: Release
 
@@ -44,10 +49,6 @@ jobs:
           $lines = Get-Content CHANGELOG.md
           $start = [array]::FindIndex($lines, [Predicate[string]] { param($l) $l -match "^## $([regex]::Escape($version))( |$)" })
           if ($start -lt 0) { throw "CHANGELOG.md has no '## $version' section" }
-          $notes = New-Object System.Collections.Generic.List[string]
-          for ($i = $start + 1; $i -lt $lines.Count -and $lines[$i] -notmatch '^## '; $i++) { $notes.Add($lines[$i]) }
-          ($notes -join "`n").Trim() | Out-File -Encoding utf8 release-notes.md
-          Get-Content release-notes.md
           "version=$version" >> $env:GITHUB_OUTPUT
 
       # --- Engine DLLs: the same steps as engine.yml ---
@@ -119,6 +120,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build installer (pnpm dist)
+        env:
+          # createUpdaterArtifacts: Tauri signs the NSIS installer and writes <installer>.sig.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           pnpm dist
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -130,7 +135,28 @@ jobs:
           New-Item -ItemType Directory -Force release | Out-Null
           $setup = "src-tauri/target/release/bundle/nsis/SoundConnect Desktop_${version}_x64-setup.exe"
           if (-not (Test-Path -LiteralPath $setup)) { throw "missing installer: $setup" }
-          Copy-Item -LiteralPath $setup release/
+          if (-not (Test-Path -LiteralPath "$setup.sig")) { throw "missing updater signature: $setup.sig" }
+          # GitHub turns spaces in asset names into dots; name it that way here so the
+          # checksums, latest.json and the download URL all agree.
+          $versioned = "SoundConnect.Desktop_${version}_x64-setup.exe"
+          Copy-Item -LiteralPath $setup "release/$versioned"
+          Copy-Item -LiteralPath "$setup.sig" "release/$versioned.sig"
+          Copy-Item -LiteralPath $setup "release/SoundConnect-Desktop-Setup.exe"
+
+          pwsh -NoProfile -File tools/release-notes.ps1 -Version $version -ChangelogOnly -Out changelog-section.md
+          $latest = [ordered]@{
+            version   = $version
+            notes     = (Get-Content changelog-section.md -Raw).Trim()
+            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = (Get-Content -LiteralPath "$setup.sig" -Raw).Trim()
+                url       = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$version/$versioned"
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content -Path release/latest.json -Encoding utf8NoBOM
+          Get-Content release/latest.json
 
           $bin = "engine/bin/$env:CONFIG"
           $zipDir = "build/engine-dlls"
@@ -142,6 +168,8 @@ jobs:
           }
           Copy-Item upstream/SonyHeadphonesClient/LICENSE "$zipDir/LICENSE-SonyHeadphonesClient.txt"
           Compress-Archive -Path "$zipDir/*" -DestinationPath "release/engine-dlls-$short.zip"
+          pwsh -NoProfile -File tools/release-notes.ps1 -Version $version -EngineZip "engine-dlls-$short.zip" -Repo $env:GITHUB_REPOSITORY -Out release-notes.md
+          Get-Content release-notes.md
 
           $sums = Get-ChildItem release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
             "{0}  {1}" -f (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(), $_.Name

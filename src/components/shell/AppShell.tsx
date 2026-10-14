@@ -19,6 +19,8 @@ import { RailDevice } from "../frame/RailDevice";
 import { SideNav } from "../frame/SideNav";
 import { PageTitle } from "../page/PageTitle";
 import { AlertBanner } from "./AlertBanner";
+import { UpdateBannerHost } from "../updates/UpdateBannerHost";
+import { useAutoUpdateCheck } from "../../hooks/updates/useAutoUpdateCheck";
 import { ConnectionAnnouncer } from "./ConnectionAnnouncer";
 import "./AppShell.css";
 
@@ -58,6 +60,7 @@ export function AppShell() {
   const announcement = useConnectionAnnouncement();
   const alert = useAlertBannerProps();
   const device = useRailDeviceProps();
+  useAutoUpdateCheck();
 
   return (
     <>
@@ -77,6 +80,7 @@ export function AppShell() {
         }
       >
         <div className="app-shell__page" role="region" aria-labelledby={headingId}>
+          <UpdateBannerHost />
           {alert ? <AlertBanner {...alert} /> : null}
           <Page />
         </div>

@@ -100,6 +100,10 @@ pub fn run() {
             MacosLauncher::LaunchAgent,
             Some(vec![MINIMIZED_ARG]),
         ))
+        // In-app updates from the GitHub release's latest.json (signed; see
+        // Core Services, Updates) and the restart after installing one.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 let keep = window

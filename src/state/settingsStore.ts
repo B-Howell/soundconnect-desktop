@@ -20,6 +20,10 @@ export interface SettingsValues {
   onboardingDone: boolean;
   /** Connect when the remembered headphones appear (`setAutoConnect`, pushed by `useAutoConnectSync`). */
   autoConnect: boolean;
+  /** Check GitHub for a new version once a day at launch (`useAutoUpdateCheck`). */
+  checkForUpdates: boolean;
+  /** Unix ms of the last automatic update check (0: never). */
+  lastUpdateCheck: number;
 }
 
 export interface SettingsState extends SettingsValues {
@@ -29,6 +33,8 @@ export interface SettingsState extends SettingsValues {
   setStartMinimized: (value: boolean) => void;
   setOnboardingDone: (value: boolean) => void;
   setAutoConnect: (value: boolean) => void;
+  setCheckForUpdates: (value: boolean) => void;
+  setLastUpdateCheck: (value: number) => void;
 }
 
 export const SETTINGS_DEFAULTS: SettingsValues = {
@@ -38,6 +44,8 @@ export const SETTINGS_DEFAULTS: SettingsValues = {
   startMinimized: false,
   onboardingDone: false,
   autoConnect: false,
+  checkForUpdates: true,
+  lastUpdateCheck: 0,
 };
 
 /** The single `localStorage` key holding every app setting as JSON. */
@@ -53,8 +61,18 @@ export function sanitizeSettings(stored: unknown): Partial<SettingsValues> {
   const raw = stored as Record<string, unknown>;
   const clean: Partial<SettingsValues> = {};
   if (THEME_PREFERENCES.includes(raw.theme as ThemePreference)) clean.theme = raw.theme as ThemePreference;
-  for (const key of ["startWithWindows", "keepRunningInTray", "startMinimized", "onboardingDone", "autoConnect"] as const) {
+  for (const key of [
+    "startWithWindows",
+    "keepRunningInTray",
+    "startMinimized",
+    "onboardingDone",
+    "autoConnect",
+    "checkForUpdates",
+  ] as const) {
     if (typeof raw[key] === "boolean") clean[key] = raw[key];
+  }
+  if (typeof raw.lastUpdateCheck === "number" && Number.isFinite(raw.lastUpdateCheck) && raw.lastUpdateCheck >= 0) {
+    clean.lastUpdateCheck = raw.lastUpdateCheck;
   }
   return clean;
 }
@@ -76,6 +94,8 @@ export function createSettingsStore(storage: StateStorage) {
         setStartMinimized: (startMinimized) => set({ startMinimized }),
         setOnboardingDone: (onboardingDone) => set({ onboardingDone }),
         setAutoConnect: (autoConnect) => set({ autoConnect }),
+        setCheckForUpdates: (checkForUpdates) => set({ checkForUpdates }),
+        setLastUpdateCheck: (lastUpdateCheck) => set({ lastUpdateCheck }),
       }),
       {
         name: SETTINGS_STORAGE_KEY,
@@ -88,6 +108,8 @@ export function createSettingsStore(storage: StateStorage) {
           startMinimized,
           onboardingDone,
           autoConnect,
+          checkForUpdates,
+          lastUpdateCheck,
         }): SettingsValues => ({
           theme,
           startWithWindows,
@@ -95,6 +117,8 @@ export function createSettingsStore(storage: StateStorage) {
           startMinimized,
           onboardingDone,
           autoConnect,
+          checkForUpdates,
+          lastUpdateCheck,
         }),
         merge: (stored, current) => ({ ...current, ...sanitizeSettings(stored) }),
       },

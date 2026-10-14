@@ -5,8 +5,9 @@ import { AboutCard } from "../components/settings/AboutCard";
 import { HeadphonesRows } from "../components/settings/HeadphonesRows";
 import { StartupRows } from "../components/settings/StartupRows";
 import { ThemePicker } from "../components/settings/ThemePicker";
+import { UpdateRows } from "../components/settings/UpdateRows";
 
-/** Settings: the app's own preferences (Headphones, Appearance, Startup) beside About. Composition only. */
+/** Settings: the app's own preferences (Headphones, Appearance, Startup) beside Updates and About. Composition only. */
 export function SettingsPage() {
   return (
     <CardGrid>
@@ -28,6 +29,11 @@ export function SettingsPage() {
         </LabelledSection>
       </CardStack>
       <CardStack>
+        <LabelledSection title="Updates">
+          <GroupedList aria-label="Updates">
+            <UpdateRows />
+          </GroupedList>
+        </LabelledSection>
         <LabelledSection title="About">
           <AboutCard />
         </LabelledSection>

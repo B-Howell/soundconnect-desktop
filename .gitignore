@@ -11,3 +11,6 @@ engine/bin/
 # TypeScript incremental build info (tsconfig.node.json is composite)
 *.tsbuildinfo
 .claude/
+# Updater signing keys live outside the repo; never commit one
+*.key
+*.key.pub

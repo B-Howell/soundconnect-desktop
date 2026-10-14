@@ -61,6 +61,8 @@ describe("settingsStore", () => {
     first.getState().setKeepRunningInTray(false);
     first.getState().setOnboardingDone(true);
     first.getState().setAutoConnect(true);
+    first.getState().setCheckForUpdates(false);
+    first.getState().setLastUpdateCheck(1234);
 
     expect(Array.from(storage.data.keys())).toEqual([SETTINGS_STORAGE_KEY]);
     const saved = JSON.parse(storage.data.get(SETTINGS_STORAGE_KEY) ?? "null");
@@ -71,6 +73,8 @@ describe("settingsStore", () => {
       keepRunningInTray: false,
       onboardingDone: true,
       autoConnect: true,
+      checkForUpdates: false,
+      lastUpdateCheck: 1234,
     });
 
     const second = createSettingsStore(safeStorage(() => storage));
@@ -79,6 +83,8 @@ describe("settingsStore", () => {
       startWithWindows: true,
       startMinimized: true,
       keepRunningInTray: false,
+      checkForUpdates: false,
+      lastUpdateCheck: 1234,
     });
   });
 

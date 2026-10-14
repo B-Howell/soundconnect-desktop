@@ -6,6 +6,16 @@ in a desktop interface modelled on Sony's Sound Connect phone app.
 
 **Not affiliated with, endorsed by, or supported by Sony.**
 
+### **[Download the latest installer](https://github.com/B-Howell/soundconnect-desktop/releases/latest/download/SoundConnect-Desktop-Setup.exe)** (Windows 10/11)
+
+1. Download **SoundConnect-Desktop-Setup.exe** from the link above.
+2. Run it. If Windows shows "Windows protected your PC", click **More info**,
+   then **Run anyway** (the app is not code-signed). No admin prompt.
+3. Open **SoundConnect Desktop** from the Start menu, pair your headphones in
+   Windows Bluetooth settings if you have not, and follow the setup wizard.
+
+From 0.1.9 on, the app updates itself from Settings.
+
 ![SoundConnect Desktop: the Status page with a connected WH-1000XM4, dark theme](docs/readme/soundconnect-status-dark.png)
 
 > **Built with REA.** This project began as a test drive of
@@ -54,8 +64,9 @@ Grouped the way the app's left rail is:
   ducking, absolute volume, codec, adapter power saving), with restore. Admin-only changes are marked and run through
   an elevated helper.
 - **Settings**: connect automatically, set up or forget headphones, theme,
-  start with Windows (optionally minimized), keep running in the tray, about
-  and licences.
+  start with Windows (optionally minimized), keep running in the tray,
+  updates (it updates itself from Settings, checking once a day), about and
+  licences.
 - **Tray**: name and battery in the tooltip, quick noise control without
   opening the window.
 
@@ -80,14 +91,19 @@ Bluetooth settings.
 
 ## Install
 
-1. Download `SoundConnect Desktop_<version>_x64-setup.exe` from the
-   [Releases](../../releases) page. `SHA256SUMS.txt` next to it lets you check
-   the download (`Get-FileHash .\SoundConnect*.exe`).
+1. Download [SoundConnect-Desktop-Setup.exe](https://github.com/B-Howell/soundconnect-desktop/releases/latest/download/SoundConnect-Desktop-Setup.exe) (the newest release;
+   every release also carries it as `SoundConnect.Desktop_<version>_x64-setup.exe`).
+   `SHA256SUMS.txt` next to it lets you check the download
+   (`Get-FileHash .\SoundConnect*.exe`).
 2. Run it. The installer is **not code-signed**, so Windows SmartScreen shows
    "Windows protected your PC": choose **More info**, then **Run anyway**.
 3. It installs for the current user only (no admin prompt) into
    `%LOCALAPPDATA%\SoundConnect Desktop` and adds a Start menu entry.
    Uninstall from Settings > Apps.
+4. Later versions install from inside the app: a banner offers each new
+   release (Install now, Later, Release notes), or use Settings > Updates >
+   Check now. Updates are signed; the app refuses a download whose signature
+   does not match.
 
 The app does not search for headphones by itself unless you turn on
 "Connect automatically"; it remembers the headphones you connected and shows

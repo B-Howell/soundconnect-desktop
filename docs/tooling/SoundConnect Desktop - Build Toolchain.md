@@ -273,6 +273,8 @@ close; see [Core Services](<../core/SoundConnect Desktop - Core Services.md#veri
 Cargo: `tauri =2.12.3` (`tray-icon`), `tauri-build =2.7.2`,
 `tauri-plugin-opener =2.7.1`, `tauri-plugin-single-instance =2.5.3`,
 `tauri-plugin-window-state =2.5.0`, `tauri-plugin-autostart =2.7.0` (Task 21),
+`tauri-plugin-updater =2.13.3`, `tauri-plugin-process =2.4.0` (0.1.9; the
+newest 2.x a few days old, 2.14.0 was hours old),
 `serde =1.0.229` (`derive`),
 `serde_json =1.0.153`, `thiserror =2.0.21`.
 
@@ -280,7 +282,9 @@ npm: `@tauri-apps/api 2.12.3`, `@tauri-apps/cli 2.12.2`, `react` /
 `react-dom 19.3.0`, `framer-motion 14.1.0`, `vite 8.3.4`, `vitest 5.0.3`,
 `typescript 7.0.2`, `@vitejs/plugin-react 6.1.2`, `@types/react` /
 `@types/react-dom 19.3.0`, `@types/node 24.19.2`, `zustand 5.0.15` (since
-Task 13), `@tauri-apps/plugin-autostart 2.7.0` (Task 21, Hue's pin);
+Task 13), `@tauri-apps/plugin-autostart 2.7.0` (Task 21, Hue's pin),
+`@tauri-apps/plugin-updater 2.13.3` and `@tauri-apps/plugin-process 2.4.0`
+(0.1.9, matching the crates);
 test-only since Task 12:
 `@testing-library/react 16.3.3`, `@testing-library/dom 10.4.2`,
 `@testing-library/user-event 14.6.7`, `@testing-library/jest-dom 7.0.1`,
@@ -398,16 +402,56 @@ artifact has expired (90 days), rerun `engine.yml`.
 [release.yml](<../../.github/workflows/release.yml>) runs when a tag `v*` is
 pushed. It first checks that the tag equals the version in `package.json` and
 `src-tauri/tauri.conf.json` and that [CHANGELOG.md](<../../CHANGELOG.md>) has
-a `## <version>` section (that section becomes the release notes). It then
+a `## <version>` section. It then
 builds the engine DLLs in the job with the same configure, build and ctest
 steps as `engine.yml` (so a release never depends on an expired artifact),
 places them in `engine/bin/RelWithDebInfo` with `UPSTREAM_COMMIT.txt` so
 `build.rs` writes the installer's licence page, runs `pnpm typecheck`,
 `pnpm test` and `pnpm dist`, and publishes a GitHub Release with
-`gh release create --verify-tag`. Assets: the NSIS setup exe,
-`engine-dlls-<upstream-short-sha>.zip` (both DLLs, their import libraries,
-the `dumpbin /EXPORTS` listings, `UPSTREAM_COMMIT.txt` and upstream's MIT
-`LICENSE`, which redistribution requires) and `SHA256SUMS.txt` over both.
+`gh release create --verify-tag`. Assets (since 0.1.9):
+
+- `SoundConnect-Desktop-Setup.exe`: a fixed-name copy of the installer, so
+  `https://github.com/B-Howell/soundconnect-desktop/releases/latest/download/SoundConnect-Desktop-Setup.exe`
+  (the README's Download link) always fetches the newest one.
+- `SoundConnect.Desktop_<version>_x64-setup.exe` (staged with GitHub's
+  dotted name, so `SHA256SUMS.txt` and the URL agree; 0.1.8 and earlier
+  listed it with a space) and its `.sig`.
+- `latest.json`, the updater manifest: `version`, `notes` (the changelog
+  section), `pub_date`, and `platforms.windows-x86_64.{signature, url}` (the
+  `.sig` contents and the versioned installer's download URL).
+- `engine-dlls-<upstream-short-sha>.zip` (both DLLs, their import libraries,
+  the `dumpbin /EXPORTS` listings, `UPSTREAM_COMMIT.txt` and upstream's MIT
+  `LICENSE`, which redistribution requires) and `SHA256SUMS.txt` over all of
+  the above.
+
+The release body comes from [release-notes.ps1](<../../tools/release-notes.ps1>):
+"Install (Windows 10/11)" with three numbered steps for an ordinary user
+(download the fixed-name installer, get past SmartScreen with More info / Run
+anyway, open it from Start and follow the wizard), "What's new" (the
+changelog section), "For developers" (versioned installer, engine zip,
+checksums) and "Not affiliated with Sony." The maintainer asked for this on
+2026-10-14 because the old body (the changelog alone) did not tell an
+average user what to download. The same script re-wrote the v0.1.8 body by
+hand (`gh release edit v0.1.8 --notes-file ...`), and a fixed-name copy of
+the 0.1.8 installer was uploaded to it so the latest-download link worked
+before 0.1.9 published.
+
+### Updater signing
+
+`pnpm dist` signs the installer for the in-app updater
+(`bundle.createUpdaterArtifacts` in `tauri.conf.json`) when
+`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` are set;
+the release job passes both from repository secrets of those names. Without
+them a local `pnpm dist` fails at the signing step, so set them for a local
+release build too (`$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content <key> -Raw`).
+The key pair was made on 2026-10-14 with `pnpm tauri signer generate` into
+`%APPDATA%\soundconnect-signing\` on the maintainer's PC (`soundconnect.key`,
+`soundconnect.key.pub`, and the password in `PASSWORD.txt`), outside the
+repository; `.gitignore` ignores `*.key` and `*.key.pub` in case one is
+copied in. **Back that folder up** (offline, two places): without the
+private key and its password no later release can be signed with a key the
+installed apps accept, so every user would have to reinstall by hand. Key
+rotation is in Core Services, Updates.
 Only `contents: write` is granted, and only the built-in token is used. The
 release flow is: bump the version in both files, move the "Unreleased"
 changelog lines under the new version, commit, tag, push the tag.

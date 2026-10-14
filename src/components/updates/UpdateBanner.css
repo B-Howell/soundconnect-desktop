@@ -1,0 +1,26 @@
+/* The download bar: a thin accent track, the same height as the slider's. */
+.update-banner__progress {
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--fill);
+  overflow: hidden;
+}
+
+.update-banner__progress::-webkit-progress-bar {
+  background: var(--fill);
+  border-radius: var(--radius-pill);
+}
+
+.update-banner__progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-fast) var(--ease-out);
+}
+
+.update-banner__progress::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+}

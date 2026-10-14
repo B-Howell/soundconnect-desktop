@@ -20,6 +20,8 @@
   "dependencies": {
     "@tauri-apps/api": "2.12.3",
     "@tauri-apps/plugin-autostart": "2.7.0",
+    "@tauri-apps/plugin-process": "2.4.0",
+    "@tauri-apps/plugin-updater": "2.13.3",
     "framer-motion": "14.1.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
